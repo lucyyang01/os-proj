@@ -198,7 +198,7 @@ int main (int argc, char *argv[]) {
       fclose(infile);
     }
     //printf("The total number of words is: %i\n", total_words);
-
+    printf("The total number of words is: %i\n", total_words);
   }
   return 0;
 }
