@@ -46,12 +46,11 @@ WordCount *word_counts = NULL;
  */
 int num_words(FILE* infile) {
   int num_words = 0;
-  char curr = fgetc(infile);
-  while (curr != EOF) {
-    if (!isalpha(curr)){
+  int curr;
+  while ((curr = fgetc(infile)) !=  EOF) {
+    if ((char) curr == ' ' || (char) curr == '\n'){
       num_words += 1;
     }
-    curr = fgetc(infile);
   }
   return num_words;
 }
@@ -95,7 +94,7 @@ int main (int argc, char *argv[]) {
 
   // Count Mode (default): outputs the total amount of words counted
   bool count_mode = true;
-  int total_words = 0;
+  //int total_words = 0;
 
   // Freq Mode: outputs the frequency of each word
   bool freq_mode = false;
@@ -143,6 +142,10 @@ int main (int argc, char *argv[]) {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
+    // for(int i = 0; i < (argc - 1 -optind; i++)) {
+    //   infile[i] = fopen(argv[i], "r")
+    // }
+    infile = fopen(argv[optind], "r");
   }
 
   if (count_mode) {
