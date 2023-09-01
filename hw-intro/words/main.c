@@ -76,6 +76,31 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
+  if(infile == NULL || wclist == NULL){
+    return 1;
+  }
+  int curr;
+  int inWord = 0;
+  int numLetters = 0;
+  char word[64];
+  while((curr = fgetc(infile)) != EOF) {
+    if (isalpha((char) curr)){
+      letterCount += 1;
+      word += tolower((char) curr);
+      if(inWord == 0 && letterCount >= 2){
+        inWord = 1;
+      }
+    } else {
+      //not a word or word just ended
+      inWord = 0;
+      if (letterCount >= 2) {
+        add_word(wclist, word);
+      }
+
+      letterCount = 0;
+      memset(word, 0, sizeof(word));
+    }
+  }
   return 0;
 }
 
