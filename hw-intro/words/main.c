@@ -109,7 +109,7 @@ int count_words(WordCount **wclist, FILE *infile) {
  * Useful function: strcmp().
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
-  return 0;
+  return ((wc1)->count > (wc2)->count) - ((wc1)->count < (wc2)->count);
 }
 
 // In trying times, displays a helpful message.
@@ -173,8 +173,8 @@ int main (int argc, char *argv[]) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
     if (count_mode) {
-    printf("The total number of words is: %i\n", num_words(infile));
-      } else {
+      printf("The total number of words is: %i\n", num_words(infile));
+    } else {
         wordcount_sort(&word_counts, wordcount_less);
         printf("The frequencies of each word are: \n");
         fprint_words(word_counts, stdout);
@@ -198,7 +198,10 @@ int main (int argc, char *argv[]) {
       fclose(infile);
     }
     //printf("The total number of words is: %i\n", total_words);
-    printf("The total number of words is: %i\n", total_words);
+    if(count_mode){
+          printf("The total number of words is: %i\n", total_words);
+
+    }
   }
   return 0;
 }
