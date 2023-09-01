@@ -61,7 +61,21 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
- return 0;
+  //WordCount curr = *wclist;
+  // while (curr.next != NULL) {
+  //   if(strcmp(word, curr.word)) {
+  //     curr.count += 1;
+  //     break;
+  //   }
+  //   curr = curr.next;
+  // }
+  // //curr stores the last node
+  // Wordcount new_node;
+  // new_node.word = word;
+  // new_node.count = 1;
+  // new_node.next = NULL;
+  // curr.next = new_node;
+  return 0;
 }
 
 void fprint_words(WordCount *wchead, FILE *ofile) {

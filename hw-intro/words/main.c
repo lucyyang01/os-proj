@@ -48,14 +48,17 @@ int num_words(FILE* infile) {
   int num_words = 0;
   int curr;
   int inWord = 0;
+  int letterCount = 0;
   while ((curr = fgetc(infile)) !=  EOF) {
     if (isalpha((char) curr)){
-      if(inWord == 0){
+      letterCount += 1;
+      if(inWord == 0 && letterCount >= 2){
         inWord = 1;
         num_words += 1;
       }
     } else {
       inWord = 0;
+      letterCount = 0;
     }
   }
   return num_words;
