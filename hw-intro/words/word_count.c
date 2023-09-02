@@ -58,16 +58,18 @@ ssize_t len_words(WordCount *wchead) {
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
   //returns a wordcount node
-  WordCount* wc = NULL;
+  //WordCount* wc = NULL;
   WordCount* curr = wchead;
   while (curr != NULL) {
     //if strcmp is 0 then we set wc to wchead
     if (strcmp((curr)->word, word) == 0) {
-      wc = wchead;
+      //wc = wchead;
+      return curr;
+      break;
     }
     curr = (curr)->next;
   }
-  return wc;
+  return NULL;
 }
 
 int add_word(WordCount **wclist, char *word) {
@@ -76,7 +78,6 @@ int add_word(WordCount **wclist, char *word) {
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
   WordCount* found = find_word(*wclist, word);
-  printf("word array: %s\n", word);
   //if the word present in list
   if (found != NULL) {
     (found)->count += 1;

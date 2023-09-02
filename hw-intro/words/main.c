@@ -113,7 +113,8 @@ static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
     return false;
   } else if ((wc1)->count < (wc2)->count) {
     return true;
-  } else { //equal
+  } else { //equal counts
+    //if word 1 greater than word 2
     if (strcmp((wc1)->word, (wc2)->word) >= 0) {
       return false;
     } else {
