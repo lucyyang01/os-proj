@@ -37,6 +37,9 @@ int init_words(WordCount **wclist) {
      Returns 0 if no errors are encountered
      in the body of this function; 1 otherwise.
   */
+  if (wclist == NULL) {
+    return 1;
+  }
   *wclist = NULL;
   return 0;
 }
@@ -77,6 +80,9 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
+  if (wclist == NULL) {
+    return 1;
+  }
   WordCount* found = find_word(*wclist, word);
   //if the word present in list
   if (found != NULL) {
