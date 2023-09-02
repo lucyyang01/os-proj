@@ -205,7 +205,7 @@ int main (int argc, char *argv[]) {
     for (int i = optind; i < argc; i ++) {
       infile = fopen(argv[i], "r");
       if (infile == NULL) {
-        return 0;
+        return 1;
       }
       if (count_mode) {
         total_words += num_words(infile);
