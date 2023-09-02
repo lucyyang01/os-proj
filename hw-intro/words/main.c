@@ -76,9 +76,9 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
-  // if(infile == NULL || wclist == NULL){
-  //   return 1;
-  // }
+  if(infile == NULL || wclist == NULL){
+    return 1;
+  }
   int curr;
   int inWord = 0;
   int letterCount = 0;
