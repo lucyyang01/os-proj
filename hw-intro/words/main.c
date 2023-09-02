@@ -212,9 +212,12 @@ int main (int argc, char *argv[]) {
       } else {
         count_words(&word_counts, infile);
         wordcount_sort(&word_counts, wordcount_less);
-        printf("The frequencies of each word are: \n");
-        //word_counts is null when passed in
-        fprint_words(word_counts, stdout);
+        //only print LL if we are at last iteration of loop
+        if (i + 1 == argc) {
+          printf("The frequencies of each word are: \n");
+          //word_counts is null when passed in
+          fprint_words(word_counts, stdout);
+        }
       }
       fclose(infile);
     }
