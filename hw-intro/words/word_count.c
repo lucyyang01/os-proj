@@ -61,7 +61,8 @@ WordCount *find_word(WordCount *wchead, char *word) {
   WordCount* wc = NULL;
   WordCount* curr = wchead;
   while (curr != NULL) {
-    if (strcmp((curr)->word, word)) {
+    //if strcmp is 0 then we set wc to wchead
+    if (strcmp((curr)->word, word) == 0) {
       wc = wchead;
     }
     curr = (curr)->next;
@@ -85,33 +86,11 @@ int add_word(WordCount **wclist, char *word) {
       printf("new word not malloced properly");
       return 1;
     }
-    // new_word->word = word;
-    // new_word->count = 1;
-    // new_word->next = NULL;
-    new_word->word = (char*) malloc(sizeof(word));
-    if (new_word->word == NULL) {
-      return 1;
-    }
-    new_word->word = word;
+    new_word->word = new_string(word);
     new_word->count = 1;
-    new_word->next = (WordCount*) malloc(sizeof(WordCount));
-    if (new_word->next == NULL) {
-      printf("new word next not malloced properly");
-      return 1;
-    }
-    new_word->next = NULL;
-    //this is the first word added
-    if(*wclist == NULL) {
-      *wclist = new_word;
-    //there are other nodes in the list so we have to traverse to the end
-    } else {
-      WordCount *last_node = *wclist;
-      //last_node should contain the last node
-      while(last_node->next != NULL ) {
-        last_node = last_node->next;
-      }
-      last_node->next = new_word;
-    }
+    new_word->next = *wclist;
+    //NEED TO UPDATE POINTER TO WCLIST!!!!!
+    *wclist = new_word;
   }
   return 0;
 }
