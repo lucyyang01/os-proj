@@ -94,7 +94,10 @@ int count_words(WordCount **wclist, FILE *infile) {
       }
     } else {
       if (inWord) {
-        add_word(wclist, word);
+        int err = add_word(wclist, word);
+        if (err == 1) {
+          return 1;
+        }
       }
       inWord = 0;
       letterCount = 0;
@@ -106,7 +109,10 @@ int count_words(WordCount **wclist, FILE *infile) {
   memset(wordref, '\0', sizeof(word));
   //if in word and something is in word
   if (strcmp(word, wordref) != 0 && inWord == 1) {
-    add_word(wclist, word);
+    int err = add_word(wclist, word);
+    if (err == 1) {
+      return 1;
+    }
   }
   
   return 0;
