@@ -93,6 +93,9 @@ int add_word(WordCount **wclist, char *word) {
       return 1;
     }
     new_word->word = new_string(word);
+    if (new_word->word == NULL) {
+      return 1;
+    }
     new_word->count = 1;
     new_word->next = *wclist;
     //NEED TO UPDATE POINTER TO WCLIST!!!!!
