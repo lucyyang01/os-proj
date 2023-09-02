@@ -82,7 +82,7 @@ int count_words(WordCount **wclist, FILE *infile) {
   int curr;
   int inWord = 0;
   int letterCount = 0;
-  char word[MAX_WORD_LEN];
+  char word[MAX_WORD_LEN + 1];
   memset(word, '\0', sizeof(word));
   while((curr = fgetc(infile)) != EOF) {
     if (isalpha((char) curr)){
@@ -102,7 +102,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     }
   }
   //check if a word in cahr after while term
-  char wordref[MAX_WORD_LEN];
+  char wordref[MAX_WORD_LEN + 1];
   memset(wordref, '\0', sizeof(word));
   //if in word and something is in word
   if (strcmp(word, wordref) != 0 && inWord == 1) {

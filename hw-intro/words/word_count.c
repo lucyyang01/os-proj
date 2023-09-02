@@ -84,7 +84,6 @@ int add_word(WordCount **wclist, char *word) {
   } else {
     WordCount *new_word = (WordCount*) malloc(sizeof(WordCount));
     if (new_word == NULL) {
-      printf("new word not malloced properly");
       return 1;
     }
     new_word->word = new_string(word);
