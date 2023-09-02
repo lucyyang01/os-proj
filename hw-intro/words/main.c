@@ -192,7 +192,10 @@ int main (int argc, char *argv[]) {
   }
 
   /* Create the empty data structure */
-  init_words(&word_counts);
+  int initerr = init_words(&word_counts);
+  if (initerr == 1) {
+    return 1;
+  }
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
