@@ -76,29 +76,29 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
-  if(infile == NULL || wclist == NULL){
-    return 1;
-  }
+  // if(infile == NULL || wclist == NULL){
+  //   return 1;
+  // }
   int curr;
   int inWord = 0;
   int letterCount = 0;
-  char word[64];
-  memset(word, '\0', sizeof(char) * 64);
+  char word[MAX_WORD_LEN];
+  memset(word, '\0', sizeof(word));
   while((curr = fgetc(infile)) != EOF) {
     if (isalpha((char) curr)){
       word[letterCount] = (char) tolower(curr);
       letterCount += 1;
+      //if over 2 letters, hit switch
       if(inWord == 0 && letterCount >= 2){
         inWord = 1;
       }
     } else {
-      //not a word or word just ended
-      if (letterCount >= 2 && inWord) {
+      if (inWord) {
         add_word(wclist, word);
       }
       inWord = 0;
       letterCount = 0;
-      memset(word, '\0', sizeof(char) * 64);
+      memset(word, '\0', sizeof(word));
     }
   }
   return 0;
@@ -109,7 +109,17 @@ int count_words(WordCount **wclist, FILE *infile) {
  * Useful function: strcmp().
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
-  return ((wc1)->count > (wc2)->count) - ((wc1)->count < (wc2)->count);
+  if((wc1)->count > (wc2)->count) {
+    return true;
+  } else if ((wc1)->count < (wc2)->count) {
+    return false;
+  } else { //equal
+    if (strcmp((wc1)->word, (wc2)->word) >= 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
 
 // In trying times, displays a helpful message.
@@ -168,13 +178,13 @@ int main (int argc, char *argv[]) {
 
   /* Create the empty data structure */
   init_words(&word_counts);
-
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
     if (count_mode) {
       printf("The total number of words is: %i\n", num_words(infile));
     } else {
+        count_words(&word_counts, infile);
         wordcount_sort(&word_counts, wordcount_less);
         printf("The frequencies of each word are: \n");
         fprint_words(word_counts, stdout);
@@ -191,8 +201,10 @@ int main (int argc, char *argv[]) {
       if (count_mode) {
         total_words += num_words(infile);
       } else {
+        count_words(&word_counts, infile);
         wordcount_sort(&word_counts, wordcount_less);
         printf("The frequencies of each word are: \n");
+        //word_counts is null when passed in
         fprint_words(word_counts, stdout);
       }
       fclose(infile);
@@ -200,7 +212,6 @@ int main (int argc, char *argv[]) {
     //printf("The total number of words is: %i\n", total_words);
     if(count_mode){
           printf("The total number of words is: %i\n", total_words);
-
     }
   }
   return 0;

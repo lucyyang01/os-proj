@@ -47,21 +47,24 @@ ssize_t len_words(WordCount *wchead) {
      this function.
   */
     size_t len = 0;
-    while (wchead != NULL) {
+    WordCount *curr = wchead;
+    while (curr != NULL) {
       len += 1;
-      wchead = (wchead)->next;
+      curr = (curr)->next;
     }
     return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
+  //returns a wordcount node
   WordCount* wc = NULL;
-  while (wchead != NULL) {
-    if (strcmp((wchead)->word, word)) {
+  WordCount* curr = wchead;
+  while (curr != NULL) {
+    if (strcmp((curr)->word, word)) {
       wc = wchead;
     }
-    wchead = (wchead)->next;
+    curr = (curr)->next;
   }
   return wc;
 }
@@ -71,17 +74,45 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
-  while ((*wclist)->next != NULL) {
-    if(strcmp(word, (*wclist)->word)) {
-      (*wclist)->count += 1;
-      break;
+  WordCount* found = find_word(*wclist, word);
+  printf("word array: %s\n", word);
+  //if the word present in list
+  if (found != NULL) {
+    (found)->count += 1;
+  } else {
+    WordCount *new_word = (WordCount*) malloc(sizeof(WordCount));
+    if (new_word == NULL) {
+      printf("new word not malloced properly");
+      return 1;
+    }
+    // new_word->word = word;
+    // new_word->count = 1;
+    // new_word->next = NULL;
+    new_word->word = (char*) malloc(sizeof(word));
+    if (new_word->word == NULL) {
+      return 1;
+    }
+    new_word->word = word;
+    new_word->count = 1;
+    new_word->next = (WordCount*) malloc(sizeof(WordCount));
+    if (new_word->next == NULL) {
+      printf("new word next not malloced properly");
+      return 1;
+    }
+    new_word->next = NULL;
+    //this is the first word added
+    if(*wclist == NULL) {
+      *wclist = new_word;
+    //there are other nodes in the list so we have to traverse to the end
+    } else {
+      WordCount *last_node = *wclist;
+      //last_node should contain the last node
+      while(last_node->next != NULL ) {
+        last_node = last_node->next;
+      }
+      last_node->next = new_word;
     }
   }
-  WordCount new_node;
-  new_node.word = word;
-  new_node.count = 1;
-  new_node.next = NULL;
-  (*wclist)->next = &new_node;
   return 0;
 }
 
@@ -92,3 +123,4 @@ void fprint_words(WordCount *wchead, FILE *ofile) {
     fprintf(ofile, "%i\t%s\n", wc->count, wc->word);
   }
 }
+
