@@ -193,7 +193,10 @@ int main (int argc, char *argv[]) {
     if (count_mode) {
       printf("The total number of words is: %i\n", num_words(infile));
     } else {
-        count_words(&word_counts, infile);
+        int err = count_words(&word_counts, infile);
+        if (err == 1) {
+          return 1;
+        }
         wordcount_sort(&word_counts, wordcount_less);
         printf("The frequencies of each word are: \n");
         fprint_words(word_counts, stdout);
@@ -210,7 +213,10 @@ int main (int argc, char *argv[]) {
       if (count_mode) {
         total_words += num_words(infile);
       } else {
-        count_words(&word_counts, infile);
+        int err = count_words(&word_counts, infile);
+        if (err == 1) {
+          return 1;
+        }
         wordcount_sort(&word_counts, wordcount_less);
         //only print LL if we are at last iteration of loop
         if (i + 1 == argc) {
