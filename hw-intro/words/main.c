@@ -102,11 +102,11 @@ int count_words(WordCount **wclist, FILE *infile) {
     }
   }
   //check if a word in cahr after while term
-  // char wordref[MAX_WORD_LEN];
-  // memset(word, '\0', sizeof(word));
-  // if (strcmp(word, wordref) != 0) {
-  //   add_word(wclist, word);
-  // }
+  char wordref[MAX_WORD_LEN];
+  memset(word, '\0', sizeof(word) && inWord == 1);
+  if (strcmp(word, wordref) != 0) {
+    add_word(wclist, word);
+  }
   
   return 0;
 }
