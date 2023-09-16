@@ -27,20 +27,50 @@
 #include "word_count.h"
 
 void init_words(word_count_list_t* wclist) { /* TODO */
+  //pintos list is defined
+  list_init(wclist);
+  //list_push_back(wclist, wclist->elem);
 }
 
 size_t len_words(word_count_list_t* wclist) {
   /* TODO */
-  return 0;
+  size_t len = 0;
+  struct list_elem *e;
+  e = list_begin(wclist);
+  while (e != list_end(wclist)) {
+    len += 1;
+    e = list_next(e);
+  }
+  //e = list_begin(&)
+  return len;
 }
 
 word_count_t* find_word(word_count_list_t* wclist, char* word) {
   /* TODO */
+  struct list_elem *e;
+  e = list_begin(wclist);
+  while (e != list_end(wclist)) {
+    word_count_t *wc = list_entry(e, word_count_t, elem);
+    if (strcmp(wc->word, word) == 0) {
+      return wc;
+    }
+    e = list_next(e);
+  }
   return NULL;
 }
 
 word_count_t* add_word(word_count_list_t* wclist, char* word) {
   /* TODO */
+  word_count_t *found = find_word(wclist, word);
+  if (found != NULL) {
+    found->count += 1;
+  } else {
+    word_count_t *new_word = malloc(sizeof(word_count_t));
+    new_word->word = word;
+    new_word->count = 1;
+    list_push_back(wclist, &new_word->elem);
+    //new_word->list_elem = word_count_t; //????
+  }
   return NULL;
 }
 
