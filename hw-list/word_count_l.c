@@ -34,21 +34,21 @@ void init_words(word_count_list_t* wclist) { /* TODO */
 
 size_t len_words(word_count_list_t* wclist) {
   /* TODO */
-  size_t len = 0;
-  struct list_elem *e;
-  e = list_begin(wclist);
-  while (e != list_end(wclist)) {
-    len += 1;
-    e = list_next(e);
-  }
-  //e = list_begin(&)
-  return len;
+  // size_t len = 0;
+  // struct list_elem *e;
+  // e = list_begin(wclist);
+  // while (e != list_end(wclist)) {
+  //   len += 1;
+  //   e = list_next(e);
+  // }
+  return list_size(wclist);
 }
 
 word_count_t* find_word(word_count_list_t* wclist, char* word) {
   /* TODO */
   struct list_elem *e;
   e = list_begin(wclist);
+  //printf("FOUND FN");
   while (e != list_end(wclist)) {
     word_count_t *wc = list_entry(e, word_count_t, elem);
     if (strcmp(wc->word, word) == 0) {
@@ -63,18 +63,27 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
   /* TODO */
   word_count_t *found = find_word(wclist, word);
   if (found != NULL) {
+    //printf("FOUND IS NOT NULL");
     found->count += 1;
   } else {
     word_count_t *new_word = malloc(sizeof(word_count_t));
+    //printf("FOUND IS NULL");
     new_word->word = word;
     new_word->count = 1;
     list_push_back(wclist, &new_word->elem);
-    //new_word->list_elem = word_count_t; //????
+    return new_word;
   }
-  return NULL;
+  return found;
 }
 
 void fprint_words(word_count_list_t* wclist, FILE* outfile) { /* TODO */
+  struct list_elem *e;
+  e = list_begin(wclist);
+  while (e != list_end(wclist)) {
+    word_count_t *wc = list_entry(e, word_count_t, elem);
+    fprintf(outfile, "%i\t%s\n", wc->count, wc->word);
+    e = list_next(e);
+  }
 }
 
 static bool less_list(const struct list_elem* ewc1, const struct list_elem* ewc2, void* aux) {
