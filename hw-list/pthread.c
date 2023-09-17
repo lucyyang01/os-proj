@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <string.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 15
 int common = 162;
 char* somethingshared;
 
