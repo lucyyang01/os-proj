@@ -35,6 +35,11 @@
 /*
  * main - handle command line, spawning one thread per file.
  */
+
+// struct pthread_args {
+//   word_count_list_t *word_count;
+//   char* argv;
+// }
 int main(int argc, char* argv[]) {
   /* Create the empty data structure. */
   word_count_list_t word_counts;
@@ -45,6 +50,12 @@ int main(int argc, char* argv[]) {
     count_words(&word_counts, stdin);
   } else {
     /* TODO */
+    //malloc a struct containing information to pass to pthread_create
+    for (int i = 0; i < argc; i++) {
+      //make new thread for each file
+      //pthread_create()
+    }
+    //sys_pthread_join();
   }
 
   /* Output final result of all threads' work. */
