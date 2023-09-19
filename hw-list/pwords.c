@@ -35,15 +35,25 @@
 /*
  * main - handle command line, spawning one thread per file.
  */
+//int count_words(WordCount **wclist, FILE *infile) {
+typedef struct pthread_args {
+  word_count_list_t *wclist;
+  FILE *infile;
+} pthread_args;
 
-// struct pthread_args {
-//   word_count_list_t *word_count;
-//   char* argv;
-// }
+
+void wrapper_fn( void* args) {
+  pthread_args* pargs = (pthread_args *) args;
+  count_words(pargs->wclist, pargs->infile);
+  //return;
+}
+
+
 int main(int argc, char* argv[]) {
   /* Create the empty data structure. */
   word_count_list_t word_counts;
   init_words(&word_counts);
+  FILE *infile = NULL;
 
   if (argc <= 1) {
     /* Process stdin in a single thread. */
@@ -51,11 +61,32 @@ int main(int argc, char* argv[]) {
   } else {
     /* TODO */
     //malloc a struct containing information to pass to pthread_create
-    for (int i = 0; i < argc; i++) {
-      //make new thread for each file
-      //pthread_create()
+    pthread_t tid;
+    for (int i = 1; i < argc - 1; i++) {
+      infile = fopen(argv[i], "r");
+      if (infile == NULL) {
+        return 1;
+      }
+      pthread_args *args = malloc(sizeof(pthread_args));
+      args->infile = infile;
+      args->wclist = &word_counts;
+
+      pthread_create(&tid, NULL, (void*) wrapper_fn, args);
+      //sys_pthread_join()
     }
+    //call join to wait for all threads to finish
     //sys_pthread_join();
+    //not concern political data empiricalalternative narr 2/3
+    //narr made 2/3
+    //narr deal with time
+    //politically viable narr selective social worker alt narr 2/6
+    //none pd all rh pc dehum designer above alt narr narr time 4/6
+    //prop tax consumer data
+    //all water usage
+    //score none 5/6
+    //score balance 5/6
+    //unemployemnent
+    //none
   }
 
   /* Output final result of all threads' work. */
