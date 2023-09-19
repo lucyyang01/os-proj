@@ -31,6 +31,7 @@
 #include "word_count.h"
 
 void init_words(word_count_list_t* wclist) { /* TODO */
+  pthread_mutex_init(&wclist->lock, NULL); 
   list_init(&wclist->lst);
 }
 
@@ -57,7 +58,7 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
   /* TODO */
   //acquire/release locks here
   //pthread
-  pthread_mutex_trylock(&wclist->lock);
+  pthread_mutex_lock(&wclist->lock);
   //pthread_mutex_lock(&wclist->lock);
   word_count_t *found = find_word(wclist, word);
   if (found != NULL) {

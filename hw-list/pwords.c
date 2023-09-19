@@ -42,10 +42,10 @@ typedef struct pthread_args {
 } pthread_args;
 
 
-void wrapper_fn( void* args) {
+void* wrapper_fn( void* args) {
   pthread_args* pargs = (pthread_args *) args;
   count_words(pargs->wclist, pargs->infile);
-  //return;
+  return NULL;
 }
 
 int main(int argc, char* argv[]) {
@@ -59,23 +59,42 @@ int main(int argc, char* argv[]) {
   } else {
     /* TODO */
     //malloc a struct containing information to pass to pthread_create
-    pthread_t tid;
+    //list of threads
+    pthread_t* threads = malloc((argc - 2) * sizeof(pthread_t));
+    //list of thread args associated with thread
+    pthread_args* threadargs = malloc((argc - 2)* sizeof(pthread_args));
     for (int i = 1; i < argc - 1; i++) {
+      pthread_t tid = i;
       FILE *infile = NULL;
       infile = fopen(argv[i], "r");
       if (infile == NULL) {
         return 1;
       }
-      //pthread_args *args = malloc(sizeof(pthread_args));
+      threads[i - 1] = tid;
       pthread_args args;
       args.infile = infile;
       args.wclist = &word_counts;
+      threadargs[i - 1] = args;
 
-      pthread_create(&tid, NULL, (void*) wrapper_fn, &args);
+      pthread_create(&threads[i - 1], NULL, wrapper_fn, &threadargs[i - 1]);
       fclose(infile);
       //sys_pthread_join()
     }
-    //call join to wait for all threads to finish
+
+    for(int i = 0; i < argc - 2; i++) {
+      pthread_join(threads[i], NULL);
+    }
+    free(threads);
+    free(threadargs);
+  }
+
+  /* Output final result of all threads' work. */
+  wordcount_sort(&word_counts, less_count);
+  fprint_words(&word_counts, stdout);
+  return 0;
+}
+
+//call join to wait for all threads to finish
     //sys_pthread_join();
     //not concern political data empiricalalternative narr 2/3
     //narr made 2/3
@@ -88,10 +107,3 @@ int main(int argc, char* argv[]) {
     //score balance 5/6
     //unemployemnent
     //none
-  }
-
-  /* Output final result of all threads' work. */
-  wordcount_sort(&word_counts, less_count);
-  fprint_words(&word_counts, stdout);
-  return 0;
-}
