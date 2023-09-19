@@ -38,14 +38,14 @@
 //int count_words(WordCount **wclist, FILE *infile) {
 typedef struct pthread_args {
   word_count_list_t *wclist;
-  FILE *infile;
+  FILE* infile;
 } pthread_args;
 
 
 void* wrapper_fn( void* args) {
   pthread_args* pargs = (pthread_args *) args;
   count_words(pargs->wclist, pargs->infile);
-  return NULL;
+  pthread_exit(NULL);
 }
 
 int main(int argc, char* argv[]) {
@@ -58,34 +58,25 @@ int main(int argc, char* argv[]) {
     count_words(&word_counts, stdin);
   } else {
     /* TODO */
-    //malloc a struct containing information to pass to pthread_create
-    //list of threads
-    pthread_t* threads = malloc((argc - 2) * sizeof(pthread_t));
-    //list of thread args associated with thread
-    pthread_args* threadargs = malloc((argc - 2)* sizeof(pthread_args));
-    for (int i = 1; i < argc - 1; i++) {
-      pthread_t tid = i;
-      FILE *infile = NULL;
-      infile = fopen(argv[i], "r");
+    pthread_t* threads[argc - 1];
+    //malloc list of threadargs
+    pthread_args* threadargs[argc - 1];
+    for(int i = 1; i < argc; i ++) {
+      FILE* infile = fopen(argv[i], "r");
       if (infile == NULL) {
+        printf("NULL FILE");
         return 1;
       }
-      threads[i - 1] = tid;
-      pthread_args args;
-      args.infile = infile;
-      args.wclist = &word_counts;
+      pthread_args* args = malloc(sizeof(pthread_args));
+      args->infile = infile;
+      args->wclist = &word_counts;
       threadargs[i - 1] = args;
-
-      pthread_create(&threads[i - 1], NULL, wrapper_fn, &threadargs[i - 1]);
-      fclose(infile);
-      //sys_pthread_join()
+      int rc = pthread_create(threads[i - 1], NULL, wrapper_fn, (void*) threadargs[i - 1]);
+      if (rc) {
+        printf("ERROR; THREAD");
+        exit(-1);
+      }
     }
-
-    for(int i = 0; i < argc - 2; i++) {
-      pthread_join(threads[i], NULL);
-    }
-    free(threads);
-    free(threadargs);
   }
 
   /* Output final result of all threads' work. */
@@ -107,3 +98,38 @@ int main(int argc, char* argv[]) {
     //score balance 5/6
     //unemployemnent
     //none
+
+
+    /* TODO */
+    //malloc a struct containing information to pass to pthread_create
+  //   //list of threads
+  //   pthread_t* threads = malloc((argc - 1) * sizeof(pthread_t));
+  //   //list of thread args associated with thread
+  //   pthread_args* threadargs = malloc((argc - 1)* sizeof(pthread_args));
+  //   for (int i = 1; i < argc ; i++) {
+  //     //pthread_t tid = i;
+  //     FILE *infile = NULL;
+  //     infile = fopen(argv[i], "r");
+  //     if (infile == NULL) {
+  //       return 1;
+  //     }
+  //     //threads[i - 1] = tid;
+  //     pthread_args args;
+  //     args.infile = infile;
+  //     args.wclist = &word_counts;
+  //     threadargs[i - 1] = args;
+  //     int error = pthread_create(&threads[i - 1], NULL, wrapper_fn, &threadargs[i - 1]);
+  //     if (error != 0) {
+  //       printf("error creating thrfead");
+  //       return 1;
+  //     }
+  //     fclose(infile);
+  //     //sys_pthread_join()
+  //   }
+
+  //   for(int i = 0; i < argc - 2; i++) {
+  //     pthread_join(threads[i], NULL);
+  //   }
+  //   free(threads);
+  //   free(threadargs);
+  // }
