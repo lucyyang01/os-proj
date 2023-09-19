@@ -48,12 +48,10 @@ void wrapper_fn( void* args) {
   //return;
 }
 
-
 int main(int argc, char* argv[]) {
   /* Create the empty data structure. */
   word_count_list_t word_counts;
   init_words(&word_counts);
-  FILE *infile = NULL;
 
   if (argc <= 1) {
     /* Process stdin in a single thread. */
@@ -63,15 +61,18 @@ int main(int argc, char* argv[]) {
     //malloc a struct containing information to pass to pthread_create
     pthread_t tid;
     for (int i = 1; i < argc - 1; i++) {
+      FILE *infile = NULL;
       infile = fopen(argv[i], "r");
       if (infile == NULL) {
         return 1;
       }
-      pthread_args *args = malloc(sizeof(pthread_args));
-      args->infile = infile;
-      args->wclist = &word_counts;
+      //pthread_args *args = malloc(sizeof(pthread_args));
+      pthread_args args;
+      args.infile = infile;
+      args.wclist = &word_counts;
 
-      pthread_create(&tid, NULL, (void*) wrapper_fn, args);
+      pthread_create(&tid, NULL, (void*) wrapper_fn, &args);
+      fclose(infile);
       //sys_pthread_join()
     }
     //call join to wait for all threads to finish
