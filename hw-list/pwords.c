@@ -38,13 +38,20 @@
 //int count_words(WordCount **wclist, FILE *infile) {
 typedef struct pthread_args {
   word_count_list_t *wclist;
-  FILE* infile;
+  char* infile;
 } pthread_args;
 
 
-void* wrapper_fn( void* args) {
-  pthread_args* pargs = (pthread_args *) args;
-  count_words(pargs->wclist, pargs->infile);
+void* wrapper_fn(void* args) {
+  //args = (pthread_args*) args;
+  pthread_args* pt = (pthread_args*) args;
+  FILE* infile = fopen(pt->infile, "r");
+  if (infile == NULL) {
+    printf("NULL FILE");
+    return NULL;
+  }
+  count_words(pt->wclist, infile);
+  fclose(infile);
   pthread_exit(NULL);
 }
 
@@ -58,24 +65,24 @@ int main(int argc, char* argv[]) {
     count_words(&word_counts, stdin);
   } else {
     /* TODO */
-    pthread_t* threads[argc - 1];
-    //malloc list of threadargs
-    pthread_args* threadargs[argc - 1];
+    pthread_t threads[argc - 1];
     for(int i = 1; i < argc; i ++) {
-      FILE* infile = fopen(argv[i], "r");
-      if (infile == NULL) {
-        printf("NULL FILE");
+      pthread_args* args = malloc(sizeof(pthread_args));
+      if (args == NULL) {
+        printf("MALLOCERRROR");
         return 1;
       }
-      pthread_args* args = malloc(sizeof(pthread_args));
-      args->infile = infile;
+      args->infile = argv[i];
       args->wclist = &word_counts;
-      threadargs[i - 1] = args;
-      int rc = pthread_create(threads[i - 1], NULL, wrapper_fn, (void*) threadargs[i - 1]);
+      //void* newptr =args;
+      int rc = pthread_create(&threads[i], NULL, wrapper_fn, (void*)args);
       if (rc) {
         printf("ERROR; THREAD");
         exit(-1);
       }
+    }
+    for (int i = 1; i < argc; i ++) {
+      pthread_join(threads[i], NULL);
     }
   }
 

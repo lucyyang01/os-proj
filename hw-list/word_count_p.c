@@ -31,8 +31,8 @@
 #include "word_count.h"
 
 void init_words(word_count_list_t* wclist) { /* TODO */
-  pthread_mutex_init(&wclist->lock, NULL); 
   list_init(&wclist->lst);
+  pthread_mutex_init(&wclist->lock, NULL); 
 }
 
 size_t len_words(word_count_list_t* wclist) {
@@ -68,6 +68,7 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
     new_word->word = word;
     new_word->count = 1;
     list_push_back(&wclist->lst, &new_word->elem);
+    pthread_mutex_unlock(&wclist->lock);
     return new_word;
   }
   pthread_mutex_unlock(&wclist->lock);
