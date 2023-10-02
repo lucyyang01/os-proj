@@ -30,6 +30,9 @@ pid_t shell_pgid;
 
 int cmd_exit(struct tokens* tokens);
 int cmd_help(struct tokens* tokens);
+int cmd_pwd(struct tokens* tokens);
+int cmd_cd(struct tokens* tokens);
+
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(struct tokens* tokens);
@@ -44,6 +47,8 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
     {cmd_help, "?", "show this help menu"},
     {cmd_exit, "exit", "exit the command shell"},
+    {cmd_pwd, "pwd", "print current working directory"},
+    {cmd_cd, "cd", "change working directory"}
 };
 
 /* Prints a helpful description for the given command */
@@ -55,6 +60,19 @@ int cmd_help(unused struct tokens* tokens) {
 
 /* Exits this shell */
 int cmd_exit(unused struct tokens* tokens) { exit(0); }
+
+int cmd_pwd(unused struct tokens* tokens) {
+  char buf[1024];
+  printf(" %s\n", getcwd(buf, 1024));
+  return 1;
+}
+
+int cmd_cd(unused struct tokens* tokens) {
+  //int err = chdir(tokens);
+  char* path = tokens_get_token(tokens, (tokens_get_length(tokens) - 1));
+  chdir(path);
+  return 1;
+}
 
 /* Looks up the built-in command, if it exists. */
 int lookup(char cmd[]) {
@@ -111,7 +129,25 @@ int main(unused int argc, unused char* argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      //fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      //which calls one of the functions from the exec family to run the new program
+      char* path_to_program = argv[0];
+      char* rest_of_args[argc];
+      for(int i = 0; i < argc; i++) {
+        rest_of_args[i] = argv[i];
+      }
+      pid_t child_pid;
+      //child code execution
+      if ((child_pid = fork()) == 0) {
+        execv(path_to_program, rest_of_args);
+      //parent code expecution
+      } else {
+        int status;
+        waitpid(child_pid, &status, 0);
+        // if (WIFEXITED(status)) {
+        //   WEXITSTATUS(status);
+        // }
+      }
     }
 
     if (shell_is_interactive)
