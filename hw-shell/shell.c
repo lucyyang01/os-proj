@@ -70,7 +70,11 @@ int cmd_pwd(unused struct tokens* tokens) {
 int cmd_cd(unused struct tokens* tokens) {
   //int err = chdir(tokens);
   char* path = tokens_get_token(tokens, (tokens_get_length(tokens) - 1));
-  chdir(path);
+  int err = chdir(path);
+  if (err != 0) {
+    printf("%s\n", path);
+    return err;
+  }
   return 1;
 }
 
@@ -121,21 +125,24 @@ int main(unused int argc, unused char* argv[]) {
   while (fgets(line, 4096, stdin)) {
     /* Split our line into words. */
     struct tokens* tokens = tokenize(line);
+    // printf("%s\n", line);
+    // printf("%s\n", tokens_get_token(tokens, 0));
+    // return 1;
 
     /* Find which built-in function to run. */
     int fundex = lookup(tokens_get_token(tokens, 0));
-
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
-      char* path_to_program = argv[0];
+      char* path_to_program = tokens_get_token(tokens, 0);
       char* rest_of_args[argc];
       for(int i = 0; i < argc; i++) {
-        rest_of_args[i] = argv[i];
+        rest_of_args[i] = tokens_get_token(tokens, i);
       }
+      
       pid_t child_pid;
       //child code execution
       if ((child_pid = fork()) == 0) {
