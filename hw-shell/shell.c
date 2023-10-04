@@ -64,10 +64,10 @@ int cmd_exit(unused struct tokens* tokens) { exit(0); }
 int cmd_pwd(unused struct tokens* tokens) {
   char buf[1024];
   if (getcwd(buf, 1024) == NULL) {
-    return 0;
+    return 1;
   }
   printf(" %s\n", getcwd(buf, 1024));
-  return 1;
+  return 0;
 }
 
 int cmd_cd(unused struct tokens* tokens) {
@@ -125,10 +125,7 @@ int main(unused int argc, unused char* argv[]) {
   while (fgets(line, 4096, stdin)) {
     /* Split our line into words. */
     struct tokens* tokens = tokenize(line);
-    // printf("%s\n", line);
-    // printf("%s\n", tokens_get_token(tokens, 0));
-    // return 1;
-
+    
     /* Find which built-in function to run. */
     int fundex = lookup(tokens_get_token(tokens, 0));
     if (fundex >= 0) {
@@ -138,11 +135,12 @@ int main(unused int argc, unused char* argv[]) {
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
       char* path_to_program = tokens_get_token(tokens, 0);
-      char* rest_of_args[argc];
-      for(int i = 0; i < argc; i++) {
+      char* rest_of_args[tokens_get_length(tokens) + 1];
+      for(int i = 0; i < tokens_get_length(tokens); i++) {
         rest_of_args[i] = tokens_get_token(tokens, i);
       }
-      
+      //append null pointer to args
+      rest_of_args[tokens_get_length(tokens)] = NULL;
       pid_t child_pid;
       //child code execution
       if ((child_pid = fork()) == 0) {
@@ -150,7 +148,13 @@ int main(unused int argc, unused char* argv[]) {
       //parent code expecution
       } else {
         int status;
-        waitpid(child_pid, &status, 0);
+        int rval = wait(&status);
+        if (rval == child_pid) {
+          
+        }
+
+        //use wait instead of waitpid 
+        // waitpid(child_pid, &status, 0);
         // if (WIFEXITED(status)) {
         //   WEXITSTATUS(status);
         // }
