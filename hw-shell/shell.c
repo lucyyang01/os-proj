@@ -72,10 +72,11 @@ int cmd_pwd(unused struct tokens* tokens) {
 
 int cmd_cd(unused struct tokens* tokens) {
   //int err = chdir(tokens);
-  char buf[1024];
-  int length = tokens_get_length(tokens);
-  strcpy(buf, tokens_get_token(tokens, length - 1));
-  return chdir(buf);
+  // char buf[1024];
+  // int length = tokens_get_length(tokens);
+  // strcpy(buf, tokens_get_token(tokens, length - 1));
+  // return chdir(buf);
+  return chdir(tokens_get_token(tokens, 1));
 }
 
 /* Looks up the built-in command, if it exists. */
