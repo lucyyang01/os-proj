@@ -62,11 +62,11 @@ int cmd_help(unused struct tokens* tokens) {
 int cmd_exit(unused struct tokens* tokens) { exit(0); }
 
 int cmd_pwd(unused struct tokens* tokens) {
-  char buf[1024];
-  if (getcwd(buf, 1024) == NULL) {
-    return 1;
-  }
-  printf(" %s\n", getcwd(buf, 1024));
+  // char buf[1024];
+  // if (getcwd(buf, 1024) == NULL) {
+  //   return 1;
+  // }
+  printf(" %s\n", getcwd(NULL, 0));
   return 0;
 }
 
@@ -135,6 +135,9 @@ int main(unused int argc, unused char* argv[]) {
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
       char* path_to_program = tokens_get_token(tokens, 0);
+      //char *path = getenv("PATH");
+
+
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
         rest_of_args[i] = tokens_get_token(tokens, i);
