@@ -70,11 +70,11 @@ int cmd_pwd(unused struct tokens* tokens) {
 int cmd_cd(unused struct tokens* tokens) {
   //int err = chdir(tokens);
   char* path = tokens_get_token(tokens, (tokens_get_length(tokens) - 1));
-  int err = chdir(path);
-  if (err != 0) {
-    printf("%s\n", path);
-    return err;
-  }
+  return chdir(path);
+  // if (err != 0) {
+  //   printf("%s\n", path);
+  //   return err;
+  // }
   return 1;
 }
 
