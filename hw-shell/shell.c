@@ -63,6 +63,9 @@ int cmd_exit(unused struct tokens* tokens) { exit(0); }
 
 int cmd_pwd(unused struct tokens* tokens) {
   char buf[1024];
+  if (getcwd(buf, 1024) == NULL) {
+    return 0;
+  }
   printf(" %s\n", getcwd(buf, 1024));
   return 1;
 }
