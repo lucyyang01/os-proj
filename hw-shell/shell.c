@@ -69,9 +69,9 @@ int cmd_pwd(unused struct tokens* tokens) {
 
 int cmd_cd(unused struct tokens* tokens) {
   //int err = chdir(tokens);
-  char* path;
-  path = tokens_get_token(tokens, (tokens_get_length(tokens) - 1));
-  return chdir(path);
+  char buf[1024];
+  strcpy(buf, tokens_get_token(tokens, (tokens_get_length(tokens) - 1)));
+  return chdir(buf);
   // if (err != 0) {
   //   printf("%s\n", path);
   //   return err;
