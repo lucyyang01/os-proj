@@ -149,9 +149,10 @@ int main(unused int argc, unused char* argv[]) {
         char full_path[2048];
         //while token not null or exec keeps failing
         while ((token = (char*) strtok_r(NULL, ":", &saveptr)) || execv(full_path, rest_of_args) == -1) {
-          strcat(token, "/");
-          strcat(full_path, token); //use slashes when concatenating paths
+          char* tok = strcat(token, "/");
+          char* fp = strcat(full_path, tok); //use slashes when concatenating paths
           //need to update rest_of_args[0]?
+          rest_of_args[0] = fp;
       }
       } else {
         int status;
