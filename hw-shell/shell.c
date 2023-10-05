@@ -127,29 +127,26 @@ int main(unused int argc, unused char* argv[]) {
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
 
 
-      // bool outRedirect = false;
-      // bool inRedirect = false;
-      // char* process;
-      // char* file;
+      bool outRedirect = false;
+      bool inRedirect = false;
+      //char* process;
+      char* file;
       
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
         //redirect output to files that don't yet exist
         //>,< always surrounded by spaces
+        if (*tokens_get_token(tokens, i) == '>') {
+          outRedirect = true; 
+          file = tokens_get_token(tokens, i + 1);
+          break;
+        } else if (*tokens_get_token(tokens, i) == '<') {
+          //feed contents of file to stdin 
+          inRedirect = true;
+          file = tokens_get_token(tokens, i + 1);
+          break;
+        }
         rest_of_args[i] = tokens_get_token(tokens, i);
-        // if (tokens_get_token(tokens, i) == '>') {
-        //   //i - 1 is process, i + 1 is the file
-        //   //do the work in the child process
-        //   //redirect stdout to file
-        //   outRedirect = true; //set this back to false eventually!!!!!!!!!!!!!!
-        //   process = tokens_get_token(tokens, i - 1);
-        //   file = tokens_get_token(tokens, i + 1);
-        // } else if (tokens_get_token(tokens, i) == '<') {
-        //   //feed contents of file to stdin 
-        //   inRedirect = true;
-        //   process = tokens_get_token(tokens, i - 1);
-        //   file = tokens_get_token(tokens, i + 1);
-        // }
       }
       //append null pointer to args
       rest_of_args[tokens_get_length(tokens)] = NULL;
@@ -157,16 +154,33 @@ int main(unused int argc, unused char* argv[]) {
       //child code execution
       if ((child_pid = fork()) == 0) {
 
-        //REDIRECTION
-        // if (outRedirect) {
-        //   outFile = open()
-        // }
-        // if(inRedirect) {
-        //   inFile = open()
-        // }
-
-
-
+        //START REDIRECTION
+        if (outRedirect) {
+          int outFD = open(file, O_CREAT | O_RDWR | O_TRUNC, 0666);
+          if (outFD == -1) {
+            printf("%s\n", file);
+            perror("outfd error");
+          }
+          if (dup2(outFD, STDOUT_FILENO) == -1) {
+            perror("dup2 error");
+          }
+          close(outFD);
+          outRedirect = false;
+        }
+        if (inRedirect) {
+          int inFD = open(file, O_RDONLY);
+          if (inFD == -1) {
+            printf("%s\n", file);
+            perror("outfd error");
+          }
+          if (dup2(inFD, STDIN_FILENO) == -1) {
+            perror("dup2 error");
+          }
+          close(inFD);
+          inRedirect = false;
+        }
+        //END REDIRECTION
+       
 
         //START PATH RESOLUTION
         char *path = getenv("PATH");
