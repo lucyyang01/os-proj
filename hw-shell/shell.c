@@ -67,11 +67,6 @@ int cmd_pwd(unused struct tokens* tokens) {
 }
 
 int cmd_cd(unused struct tokens* tokens) {
-  //int err = chdir(tokens);
-  // char buf[1024];
-  // int length = tokens_get_length(tokens);
-  // strcpy(buf, tokens_get_token(tokens, length - 1));
-  // return chdir(buf);
   return chdir(tokens_get_token(tokens, 1));
 }
 
@@ -130,17 +125,50 @@ int main(unused int argc, unused char* argv[]) {
     } else {
       /* REPLACE this to run commands as programs. */
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
-      //which calls one of the functions from the exec family to run the new program
 
+
+      // bool outRedirect = false;
+      // bool inRedirect = false;
+      // char* process;
+      // char* file;
+      
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
+        //redirect output to files that don't yet exist
+        //>,< always surrounded by spaces
         rest_of_args[i] = tokens_get_token(tokens, i);
+        // if (tokens_get_token(tokens, i) == '>') {
+        //   //i - 1 is process, i + 1 is the file
+        //   //do the work in the child process
+        //   //redirect stdout to file
+        //   outRedirect = true; //set this back to false eventually!!!!!!!!!!!!!!
+        //   process = tokens_get_token(tokens, i - 1);
+        //   file = tokens_get_token(tokens, i + 1);
+        // } else if (tokens_get_token(tokens, i) == '<') {
+        //   //feed contents of file to stdin 
+        //   inRedirect = true;
+        //   process = tokens_get_token(tokens, i - 1);
+        //   file = tokens_get_token(tokens, i + 1);
+        // }
       }
       //append null pointer to args
       rest_of_args[tokens_get_length(tokens)] = NULL;
       pid_t child_pid;
       //child code execution
       if ((child_pid = fork()) == 0) {
+
+        //REDIRECTION
+        // if (outRedirect) {
+        //   outFile = open()
+        // }
+        // if(inRedirect) {
+        //   inFile = open()
+        // }
+
+
+
+
+        //START PATH RESOLUTION
         char *path = getenv("PATH");
         char *saveptr;
         char* token = strtok_r(path, ":", &saveptr);
@@ -149,10 +177,11 @@ int main(unused int argc, unused char* argv[]) {
         while (token != NULL) {
           strcpy(full_path, token);
           strcat(full_path, "/wc");
-          rest_of_args[0] = full_path;
+          //rest_of_args[0] = full_path;
           if(execv(full_path, rest_of_args) == -1) {
             token = strtok_r(NULL, ":", &saveptr);
           }
+      //END PATH RESOLUTION
       }
       } else {
         int status;
