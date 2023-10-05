@@ -130,7 +130,8 @@ int main(unused int argc, unused char* argv[]) {
       bool outRedirect = false;
       bool inRedirect = false;
       //char* process;
-      char* file;
+      char* outfile;
+      char* infile;
       
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
@@ -138,12 +139,12 @@ int main(unused int argc, unused char* argv[]) {
         //>,< always surrounded by spaces
         if (*tokens_get_token(tokens, i) == '>') {
           outRedirect = true; 
-          file = tokens_get_token(tokens, i + 1);
+          outfile = tokens_get_token(tokens, i + 1);
           break;
         } else if (*tokens_get_token(tokens, i) == '<') {
           //feed contents of file to stdin 
           inRedirect = true;
-          file = tokens_get_token(tokens, i + 1);
+          infile = tokens_get_token(tokens, i + 1);
           break;
         }
         rest_of_args[i] = tokens_get_token(tokens, i);
@@ -153,30 +154,29 @@ int main(unused int argc, unused char* argv[]) {
       pid_t child_pid;
       //child code execution
       if ((child_pid = fork()) == 0) {
-
         //START REDIRECTION
         if (outRedirect) {
-          int outFD = open(file, O_CREAT | O_RDWR | O_TRUNC, 0666);
+          int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
           if (outFD == -1) {
-            printf("%s\n", file);
+            printf("%s\n", outfile);
             perror("outfd error");
           }
           if (dup2(outFD, STDOUT_FILENO) == -1) {
             perror("dup2 error");
           }
-          close(outFD);
+          //close(outFD);
           outRedirect = false;
         }
         if (inRedirect) {
-          int inFD = open(file, O_RDONLY);
+          int inFD = open(infile, O_RDONLY);
           if (inFD == -1) {
-            printf("%s\n", file);
+            printf("%s\n", infile);
             perror("outfd error");
           }
           if (dup2(inFD, STDIN_FILENO) == -1) {
             perror("dup2 error");
           }
-          close(inFD);
+          //close(inFD);
           inRedirect = false;
         }
         //END REDIRECTION
