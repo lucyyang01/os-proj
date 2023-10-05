@@ -164,7 +164,7 @@ int main(unused int argc, unused char* argv[]) {
           if (dup2(outFD, STDOUT_FILENO) == -1) {
             perror("dup2 error");
           }
-          //close(outFD);
+          close(outFD);
           outRedirect = false;
         }
         if (inRedirect) {
@@ -176,7 +176,7 @@ int main(unused int argc, unused char* argv[]) {
           if (dup2(inFD, STDIN_FILENO) == -1) {
             perror("dup2 error");
           }
-          //close(inFD);
+          close(inFD);
           inRedirect = false;
         }
         //END REDIRECTION
@@ -190,8 +190,9 @@ int main(unused int argc, unused char* argv[]) {
         
         while (token != NULL) {
           strcpy(full_path, token);
-          strcat(full_path, "/wc");
-          //rest_of_args[0] = full_path;
+          strcat(full_path, "/");
+          strcat(full_path, tokens_get_token(tokens, 0));
+          rest_of_args[0] = full_path;
           if(execv(full_path, rest_of_args) == -1) {
             token = strtok_r(NULL, ":", &saveptr);
           }
