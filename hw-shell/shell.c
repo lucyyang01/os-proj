@@ -201,13 +201,14 @@ int main(unused int argc, unused char* argv[]) {
         char* token = strtok_r(path, ":", &saveptr);
         char full_path[2048];
       
-        bool providedFP = false; 
-        if (*token == '/') {
-          //we were already provided the full path
-          execv(token, rest_of_args);
-          providedFP = true;
-        }
-        while (token != NULL && !providedFP) {
+        // bool providedFP = false; 
+        // if (*token == '/') {
+        //   //we were already provided the full path
+        //   execv(token, rest_of_args);
+        //   providedFP = true;
+        // }
+        if(execv(token, rest_of_args) == -1) {
+          while (token != NULL) {
           //clear full path
           strcat(full_path, token);
           strcat(full_path, "/");
@@ -218,8 +219,9 @@ int main(unused int argc, unused char* argv[]) {
           }
           full_path[0] = '\0';
           //initialize first byte of full path to null terminator to 
-      //END PATH RESOLUTION
+          //END PATH RESOLUTION
       }
+        }
       } else {
         if(inNeedToClose) {
           close(inFD);
