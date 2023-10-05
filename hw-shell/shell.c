@@ -129,34 +129,46 @@ int main(unused int argc, unused char* argv[]) {
 
       bool outRedirect = false;
       bool inRedirect = false;
+      bool inNeedToClose = false;
+      bool outNeedToClose = false;
       //char* process;
       char* outfile;
       char* infile;
-      
+      int argSize = 0;
+
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
         //redirect output to files that don't yet exist
+        //skip redirector and file
+        //keep track of current size of rest of args, if u see anything that's not a carr
         //>,< always surrounded by spaces
         if (*tokens_get_token(tokens, i) == '>') {
+          i++;
           outRedirect = true; 
           outfile = tokens_get_token(tokens, i + 1);
-          break;
+          continue; //uncomdy
         } else if (*tokens_get_token(tokens, i) == '<') {
           //feed contents of file to stdin 
+          i++;
           inRedirect = true;
           infile = tokens_get_token(tokens, i + 1);
-          break;
-        }
-        rest_of_args[i] = tokens_get_token(tokens, i);
+          continue;
+        } 
+        i++;
+        rest_of_args[argSize] = tokens_get_token(tokens, i);
+        argSize++;
       }
       //append null pointer to args
-      rest_of_args[tokens_get_length(tokens)] = NULL;
+      //use size variable to null terminate arg array
+      rest_of_args[argSize] = NULL;
       pid_t child_pid;
-      //child code execution
+      int outFD;
+      int inFD;
+      //child code execu
       if ((child_pid = fork()) == 0) {
         //START REDIRECTION
         if (outRedirect) {
-          int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
+          outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
           if (outFD == -1) {
             printf("%s\n", outfile);
             perror("outfd error");
@@ -164,11 +176,11 @@ int main(unused int argc, unused char* argv[]) {
           if (dup2(outFD, STDOUT_FILENO) == -1) {
             perror("dup2 error");
           }
-          close(outFD);
           outRedirect = false;
+          outNeedToClose = true;
         }
         if (inRedirect) {
-          int inFD = open(infile, O_RDONLY);
+          inFD = open(infile, O_RDONLY);
           if (inFD == -1) {
             printf("%s\n", infile);
             perror("outfd error");
@@ -176,8 +188,8 @@ int main(unused int argc, unused char* argv[]) {
           if (dup2(inFD, STDIN_FILENO) == -1) {
             perror("dup2 error");
           }
-          close(inFD);
           inRedirect = false;
+          inNeedToClose = true;
         }
         //END REDIRECTION
        
@@ -189,16 +201,25 @@ int main(unused int argc, unused char* argv[]) {
         char full_path[2048];
         
         while (token != NULL) {
-          strcpy(full_path, token);
+          //clear full path
+          strcat(full_path, token);
           strcat(full_path, "/");
           strcat(full_path, tokens_get_token(tokens, 0));
           rest_of_args[0] = full_path;
           if(execv(full_path, rest_of_args) == -1) {
             token = strtok_r(NULL, ":", &saveptr);
           }
+          full_path[0] = '\0';
+          //initialize first byte of full path to null terminator to 
       //END PATH RESOLUTION
       }
       } else {
+        if(inNeedToClose) {
+          close(inFD);
+        }
+        if(outNeedToClose) {
+          close(outFD);
+        }
         int status;
         wait(&status);
       }
