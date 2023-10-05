@@ -164,6 +164,7 @@ int main(unused int argc, unused char* argv[]) {
       pid_t child_pid;
       int outFD;
       int inFD;
+      //hello
       //child code execu
       if ((child_pid = fork()) == 0) {
         //START REDIRECTION
