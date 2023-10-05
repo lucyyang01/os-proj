@@ -131,8 +131,6 @@ int main(unused int argc, unused char* argv[]) {
       /* REPLACE this to run commands as programs. */
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
-      //char* path_to_program = tokens_get_token(tokens, 0);
- 
 
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
@@ -145,13 +143,9 @@ int main(unused int argc, unused char* argv[]) {
       if ((child_pid = fork()) == 0) {
         char *path = getenv("PATH");
         char *saveptr;
-        char *path_copy = strdup(path);
-        char* token = strtok_r(path_copy, ":", &saveptr);
-        //char *wc = "wc";
-        // printf("%s\n", token);
+        char* token = strtok_r(path, ":", &saveptr);
         char full_path[2048];
         
-        //while token not null or exec keeps failing
         while (token != NULL) {
           strcpy(full_path, token);
           strcat(full_path, "/wc");
@@ -159,7 +153,6 @@ int main(unused int argc, unused char* argv[]) {
           if(execv(full_path, rest_of_args) == -1) {
             token = strtok_r(NULL, ":", &saveptr);
           }
-          //rest_of_args[0] = full_path; 
       }
       } else {
         int status;
