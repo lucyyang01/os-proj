@@ -145,14 +145,21 @@ int main(unused int argc, unused char* argv[]) {
       if ((child_pid = fork()) == 0) {
         char *path = getenv("PATH");
         char *saveptr;
-        char* token = strtok_r(path, ":", &saveptr);
+        char *path_copy = strdup(path);
+        char* token = strtok_r(path_copy, ":", &saveptr);
+        //char *wc = "wc";
+        // printf("%s\n", token);
         char full_path[2048];
+        
         //while token not null or exec keeps failing
-        while ((token = (char*) strtok_r(NULL, ":", &saveptr)) || execv(full_path, rest_of_args) == -1) {
-          char* tok = strcat(token, "/");
-          char* fp = strcat(full_path, tok); //use slashes when concatenating paths
-          //need to update rest_of_args[0]?
-          rest_of_args[0] = fp;
+        while (token != NULL) {
+          strcpy(full_path, token);
+          strcat(full_path, "/wc");
+          rest_of_args[0] = full_path;
+          if(execv(full_path, rest_of_args) == -1) {
+            token = strtok_r(NULL, ":", &saveptr);
+          }
+          //rest_of_args[0] = full_path; 
       }
       } else {
         int status;
