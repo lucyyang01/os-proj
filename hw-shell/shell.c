@@ -62,10 +62,6 @@ int cmd_help(unused struct tokens* tokens) {
 int cmd_exit(unused struct tokens* tokens) { exit(0); }
 
 int cmd_pwd(unused struct tokens* tokens) {
-  // char buf[1024];
-  // if (getcwd(buf, 1024) == NULL) {
-  //   return 1;
-  // }
   printf("%s\n", getcwd(NULL, 0));
   return 0;
 }
@@ -136,8 +132,7 @@ int main(unused int argc, unused char* argv[]) {
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
       char* path_to_program = tokens_get_token(tokens, 0);
-      //char *path = getenv("PATH");
-
+ 
 
       char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
@@ -148,20 +143,18 @@ int main(unused int argc, unused char* argv[]) {
       pid_t child_pid;
       //child code execution
       if ((child_pid = fork()) == 0) {
-        execv(path_to_program, rest_of_args);
-      //parent code expecution
+        char *path = getenv("PATH");
+        char *saveptr;
+        char* token = strtok_r(path, ":", &saveptr);
+        char full_path[2048];
+        //while token not null or exec keeps failing
+        while ((token = (char*) strtok_r(NULL, ":", &saveptr)) || execv(path_to_program, rest_of_args) == -1) {
+          strcat(token, "/");
+          strcat(full_path, token); //use slashes when concatenating paths
+      }
       } else {
         int status;
-        int rval = wait(&status);
-        if (rval == child_pid) {
-          
-        }
-
-        //use wait instead of waitpid 
-        // waitpid(child_pid, &status, 0);
-        // if (WIFEXITED(status)) {
-        //   WEXITSTATUS(status);
-        // }
+        wait(&status);
       }
     }
 
