@@ -199,25 +199,17 @@ int main(unused int argc, unused char* argv[]) {
         char *path = getenv("PATH");
         char *saveptr;
         char* token = strtok_r(path, ":", &saveptr);
-        char full_path[2048];
-        full_path[0] = '\0';
       
-        // bool providedFP = false; 
-        // if (*token == '/') {
-        //   //we were already provided the full path
-        //   execv(token, rest_of_args);
-        //   providedFP = true;
-        // }
         if(execv(token, rest_of_args) == -1) {
           while (token != NULL) {
           //clear full path
-          strcat(full_path, token);
+          char full_path[2048];
+          strcpy(full_path, token);
           strcat(full_path, "/");
           strcat(full_path, tokens_get_token(tokens, 0));
-          rest_of_args[0] = full_path;
+          //rest_of_args[0] = full_path;
           execv(full_path, rest_of_args);
           token = strtok_r(NULL, ":", &saveptr);
-          full_path[0] = '\0';
           //initialize first byte of full path to null terminator to 
           //END PATH RESOLUTION
           }
