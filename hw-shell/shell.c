@@ -131,7 +131,7 @@ int main(unused int argc, unused char* argv[]) {
       /* REPLACE this to run commands as programs. */
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
-      char* path_to_program = tokens_get_token(tokens, 0);
+      //char* path_to_program = tokens_get_token(tokens, 0);
  
 
       char* rest_of_args[tokens_get_length(tokens) + 1];
@@ -148,9 +148,10 @@ int main(unused int argc, unused char* argv[]) {
         char* token = strtok_r(path, ":", &saveptr);
         char full_path[2048];
         //while token not null or exec keeps failing
-        while ((token = (char*) strtok_r(NULL, ":", &saveptr)) || execv(path_to_program, rest_of_args) == -1) {
+        while ((token = (char*) strtok_r(NULL, ":", &saveptr)) || execv(full_path, rest_of_args) == -1) {
           strcat(token, "/");
           strcat(full_path, token); //use slashes when concatenating paths
+          //need to update rest_of_args[0]?
       }
       } else {
         int status;
