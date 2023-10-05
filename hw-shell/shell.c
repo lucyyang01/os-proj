@@ -200,8 +200,14 @@ int main(unused int argc, unused char* argv[]) {
         char *saveptr;
         char* token = strtok_r(path, ":", &saveptr);
         char full_path[2048];
-        
-        while (token != NULL) {
+      
+        bool providedFP = false; 
+        if (*token == '/') {
+          //we were already provided the full path
+          execv(token, rest_of_args);
+          providedFP = true;
+        }
+        while (token != NULL && !providedFP) {
           //clear full path
           strcat(full_path, token);
           strcat(full_path, "/");
