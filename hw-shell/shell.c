@@ -123,15 +123,10 @@ int main(unused int argc, unused char* argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
-      /* REPLACE this to run commands as programs. */
-      //fprintf(stdout, "This shell doesn't know how to run programs.\n");
-      //which calls one of the functions from the exec family to run the new program
- 
+      
+      //START SETUP
       bool outRedirect = false;
       bool inRedirect = false;
-      // bool inNeedToClose = false;
-      // bool outNeedToClose = false;
-      //char* process;
       char* outfile;
       char* infile;
       int argSize = 0;
@@ -151,11 +146,12 @@ int main(unused int argc, unused char* argv[]) {
         rest_of_args[argSize] = tokens_get_token(tokens, i);
         argSize++;
       }
-        //rest_of_args[i] = tokens_get_token(tokens, i);
       //append null pointer to args
       rest_of_args[argSize] = NULL;
-      pid_t child_pid;
+      //END SETUP 
+
       //child code execution
+      pid_t child_pid;
       if ((child_pid = fork()) == 0) {
         //START REDIRECTION
         if (outRedirect) {
@@ -169,7 +165,6 @@ int main(unused int argc, unused char* argv[]) {
             perror("dup2 error");
           }
           outRedirect = false;
-          //outNeedToClose = true;
           close(outFD);
         }
         if (inRedirect) {
@@ -182,12 +177,11 @@ int main(unused int argc, unused char* argv[]) {
             perror("dup2 error");
           }
           inRedirect = false;
-          //inNeedToClose = true;
           close(inFD);
         }
         //END REDIRECTION
 
-        
+
         //START PATH RESOLUTION
         char *path = getenv("PATH");
         char *saveptr;
