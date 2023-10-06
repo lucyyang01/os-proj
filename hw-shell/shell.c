@@ -138,11 +138,21 @@ int main(unused int argc, unused char* argv[]) {
       //change rest_of_args to be an array of args for each process
       //undefined behavior with passing a 2D array without the number of rows declared into a function
 
-
-
       int numPipes = 0;
-      char* pipe_args[tokens_get_length(tokens) + 1];
-      //char* rest_of_args[tokens_get_length(tokens) + 1];
+      //first get number of pipes
+      for(int i = 0; i < tokens_get_length(tokens); i++) {
+        if(*tokens_get_token(tokens, i) == '|') {
+          numPipes++;
+        }
+      }
+
+      //what happens to pipefds if there's no pipe?
+      int pipeFDs[numPipes][2]; //fd0, fd1 for each pipe
+      //don't think we care about child pids?
+      //pid_t children[numPipes + 1]; //forked child processes - min 1 el
+      char* argvec[numPipes + 1]; //vector of argument arrays (for all processes) - min 1 el
+      char* rest_of_args[tokens_get_length(tokens) + 1]; //stores arguments per process
+      numPipes = 0; //index into arrays
       for(int i = 0; i < tokens_get_length(tokens); i++) {
         //REDIRECTION CHECKS BEGIN
         if (*tokens_get_token(tokens, i) == '>') {
@@ -161,12 +171,14 @@ int main(unused int argc, unused char* argv[]) {
 
         //PIPE CHECKS BEGIN
         if(*tokens_get_token(tokens, i) == '|') {
+          argvec[numPipes] = rest_of_args;
           numPipes++;
           continue; //don't want to add | to arg arr
         }
 
         //PIPE CHECKS END
-        rest_of_args[argSize] = tokens_get_token(tokens, i);
+        // rest_of_args[argSize] = tokens_get_token(tokens, i);
+        strcat()
         argSize++;
       }
       //append null pointer to args
@@ -214,7 +226,13 @@ int main(unused int argc, unused char* argv[]) {
       //parent process execution
       } else {
         int status;
-        wait(&status);
+        for(int i = 0; i <= numPipes; i++) {
+          wait(&status);
+        }
+        
+        //SIGNALLING
+        //nd figure out the minimal subset of signals in https://cs162.org/static/hw/hw-shell/docs/signal-handling/signals/ should the shell process/child process ignore/default on
+        
       }
     }
 
