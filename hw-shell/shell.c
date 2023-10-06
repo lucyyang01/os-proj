@@ -125,15 +125,13 @@ int main(unused int argc, unused char* argv[]) {
     } else {
       /* REPLACE this to run commands as programs. */
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
-
-
-      bool outRedirect = false;
-      bool inRedirect = false;
-      bool inNeedToClose = false;
-      bool outNeedToClose = false;
-      //char* process;
-      char* outfile;
-      char* infile;
+      // bool outRedirect = false;
+      // bool inRedirect = false;
+      // bool inNeedToClose = false;
+      // bool outNeedToClose = false;
+      // //char* process;
+      // char* outfile;
+      // char* infile;
       int argSize = 0;
 
       char* rest_of_args[tokens_get_length(tokens) + 1];
@@ -142,56 +140,60 @@ int main(unused int argc, unused char* argv[]) {
         //skip redirector and file
         //keep track of current size of rest of args, if u see anything that's not a carr
         //>,< always surrounded by spaces
-        if (*tokens_get_token(tokens, i) == '>') {
-          i++;
-          outRedirect = true; 
-          outfile = tokens_get_token(tokens, i + 1);
-          continue; //uncomdy
-        } else if (*tokens_get_token(tokens, i) == '<') {
-          //feed contents of file to stdin 
-          i++;
-          inRedirect = true;
-          infile = tokens_get_token(tokens, i + 1);
-          continue;
-        } 
-        i++;
-        rest_of_args[argSize] = tokens_get_token(tokens, i);
+
+
+        // if (*tokens_get_token(tokens, i) == '>') {
+        //   i++;
+        //   outRedirect = true; 
+        //   outfile = tokens_get_token(tokens, i + 1);
+        //   continue; //uncomdy
+        // } else if (*tokens_get_token(tokens, i) == '<') {
+        //   //feed contents of file to stdin 
+        //   i++;
+        //   inRedirect = true;
+        //   infile = tokens_get_token(tokens, i + 1);
+        //   continue;
+        // } 
+        // i++;
+
         argSize++;
+        rest_of_args[argSize] = tokens_get_token(tokens, i);
+        //argSize++;
       }
       //append null pointer to args
       //use size variable to null terminate arg array
-      rest_of_args[argSize] = NULL;
+      rest_of_args[argSize + 1] = NULL;
       pid_t child_pid;
-      int outFD;
-      int inFD;
+      // int outFD;
+      // int inFD;
       //hello
       //child code execu
       if ((child_pid = fork()) == 0) {
         //START REDIRECTION
-        if (outRedirect) {
-          outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
-          if (outFD == -1) {
-            printf("%s\n", outfile);
-            perror("outfd error");
-          }
-          if (dup2(outFD, STDOUT_FILENO) == -1) {
-            perror("dup2 error");
-          }
-          outRedirect = false;
-          outNeedToClose = true;
-        }
-        if (inRedirect) {
-          inFD = open(infile, O_RDONLY);
-          if (inFD == -1) {
-            printf("%s\n", infile);
-            perror("outfd error");
-          }
-          if (dup2(inFD, STDIN_FILENO) == -1) {
-            perror("dup2 error");
-          }
-          inRedirect = false;
-          inNeedToClose = true;
-        }
+        // if (outRedirect) {
+        //   outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
+        //   if (outFD == -1) {
+        //     printf("%s\n", outfile);
+        //     perror("outfd error");
+        //   }
+        //   if (dup2(outFD, STDOUT_FILENO) == -1) {
+        //     perror("dup2 error");
+        //   }
+        //   outRedirect = false;
+        //   outNeedToClose = true;
+        // }
+        // if (inRedirect) {
+        //   inFD = open(infile, O_RDONLY);
+        //   if (inFD == -1) {
+        //     printf("%s\n", infile);
+        //     perror("outfd error");
+        //   }
+        //   if (dup2(inFD, STDIN_FILENO) == -1) {
+        //     perror("dup2 error");
+        //   }
+        //   inRedirect = false;
+        //   inNeedToClose = true;
+        // }
         //END REDIRECTION
        
 
@@ -207,7 +209,6 @@ int main(unused int argc, unused char* argv[]) {
           strcpy(full_path, token);
           strcat(full_path, "/");
           strcat(full_path, tokens_get_token(tokens, 0));
-          //rest_of_args[0] = full_path;
           execv(full_path, rest_of_args);
           token = strtok_r(NULL, ":", &saveptr);
           //initialize first byte of full path to null terminator to 
@@ -215,12 +216,12 @@ int main(unused int argc, unused char* argv[]) {
           }
         }
       } else {
-        if(inNeedToClose) {
-          close(inFD);
-        }
-        if(outNeedToClose) {
-          close(outFD);
-        }
+        // if(inNeedToClose) {
+        //   close(inFD);
+        // }
+        // if(outNeedToClose) {
+        //   close(outFD);
+        // }
         int status;
         wait(&status);
       }
