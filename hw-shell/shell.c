@@ -130,19 +130,42 @@ int main(unused int argc, unused char* argv[]) {
       char* outfile;
       char* infile;
       int argSize = 0;
-      char* rest_of_args[tokens_get_length(tokens) + 1];
+
+      //PIPE SETUP
+      //instead of only forking one time, set up array of children to fork that handles the case of no pipes
+      //get the number of pipes, then set up the children pid array and use for loop to iterate thru and fork
+      //wait n = children times
+      //change rest_of_args to be an array of args for each process
+      //undefined behavior with passing a 2D array without the number of rows declared into a function
+
+
+
+      int numPipes = 0;
+      char* pipe_args[tokens_get_length(tokens) + 1];
+      //char* rest_of_args[tokens_get_length(tokens) + 1];
       for(int i = 0; i < tokens_get_length(tokens); i++) {
-         if (*tokens_get_token(tokens, i) == '>') {
+        //REDIRECTION CHECKS BEGIN
+        if (*tokens_get_token(tokens, i) == '>') {
           outRedirect = true; 
           outfile = tokens_get_token(tokens, i + 1);
           i++; //want i to increment twice to skip the file arg
           continue; 
-        } else if (*tokens_get_token(tokens, i) == '<') {
+        }
+        if (*tokens_get_token(tokens, i) == '<') {
           inRedirect = true;
           infile = tokens_get_token(tokens, i + 1);
           i++; //want i to increment twice to skip the file arg
           continue;
         } 
+        //REDIRECTION CHECKS END
+
+        //PIPE CHECKS BEGIN
+        if(*tokens_get_token(tokens, i) == '|') {
+          numPipes++;
+          continue; //don't want to add | to arg arr
+        }
+
+        //PIPE CHECKS END
         rest_of_args[argSize] = tokens_get_token(tokens, i);
         argSize++;
       }
@@ -150,9 +173,10 @@ int main(unused int argc, unused char* argv[]) {
       rest_of_args[argSize] = NULL;
       //END SETUP 
 
-      //child code execution
+      //child process execution
       pid_t child_pid;
       if ((child_pid = fork()) == 0) {
+
         //START REDIRECTION
         if (outRedirect) {
           int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
@@ -187,6 +211,7 @@ int main(unused int argc, unused char* argv[]) {
         }
         //END PATH RESOLUTION
 
+      //parent process execution
       } else {
         int status;
         wait(&status);
@@ -203,145 +228,3 @@ int main(unused int argc, unused char* argv[]) {
 
   return 0;
 }
-
-// int main(unused int argc, unused char* argv[]) {
-//   init_shell();
-
-//   static char line[4096];
-//   int line_num = 0;
-
-//   /* Please only print shell prompts when standard input is not a tty */
-//   if (shell_is_interactive)
-//     fprintf(stdout, "%d: ", line_num);
-
-//   while (fgets(line, 4096, stdin)) {
-//     /* Split our line into words. */
-//     struct tokens* tokens = tokenize(line);
-    
-//     /* Find which built-in function to run. */
-//     int fundex = lookup(tokens_get_token(tokens, 0));
-//     if (fundex >= 0) {
-//       cmd_table[fundex].fun(tokens);
-//     } else {
-//       /* REPLACE this to run commands as programs. */
-//       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
-//       // bool outRedirect = false;
-//       // bool inRedirect = false;
-//       // bool inNeedToClose = false;
-//       // bool outNeedToClose = false;
-//       // //char* process;
-//       // char* outfile;
-//       // char* infile;
-//       // int argSize = 0;
-
-//       // char* rest_of_args[tokens_get_length(tokens) + 1];
-//       // for(int i = 0; i < tokens_get_length(tokens); i++) {
-//         //redirect output to files that don't yet exist
-//         //skip redirector and file
-//         //keep track of current size of rest of args, if u see anything that's not a carr
-//         //>,< always surrounded by spaces
-
-
-//         // if (*tokens_get_token(tokens, i) == '>') {
-//         //   i++;
-//         //   outRedirect = true; 
-//         //   outfile = tokens_get_token(tokens, i + 1);
-//         //   continue; //uncomdy
-//         // } else if (*tokens_get_token(tokens, i) == '<') {
-//         //   //feed contents of file to stdin 
-//         //   i++;
-//         //   inRedirect = true;
-//         //   infile = tokens_get_token(tokens, i + 1);
-//         //   continue;
-//         // } 
-//         // i++;
-
-//       //   argSize++;
-//       //   rest_of_args[argSize] = tokens_get_token(tokens, i);
-//       //   //argSize++;
-//       // }
-//       // //append null pointer to args
-//       // //use size variable to null terminate arg array
-//       // rest_of_args[argSize + 1] = NULL;
-//       pid_t child_pid;
-//       // int outFD;
-//       // int inFD;
-//       //hello
-//       //child code execu
-//       if ((child_pid = fork()) == 0) {
-//         //START REDIRECTION
-//         // if (outRedirect) {
-//         //   outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
-//         //   if (outFD == -1) {
-//         //     printf("%s\n", outfile);
-//         //     perror("outfd error");
-//         //   }
-//         //   if (dup2(outFD, STDOUT_FILENO) == -1) {
-//         //     perror("dup2 error");
-//         //   }
-//         //   outRedirect = false;
-//         //   outNeedToClose = true;
-//         // }
-//         // if (inRedirect) {
-//         //   inFD = open(infile, O_RDONLY);
-//         //   if (inFD == -1) {
-//         //     printf("%s\n", infile);
-//         //     perror("outfd error");
-//         //   }
-//         //   if (dup2(inFD, STDIN_FILENO) == -1) {
-//         //     perror("dup2 error");
-//         //   }
-//         //   inRedirect = false;
-//         //   inNeedToClose = true;
-//         // }
-//         //END REDIRECTION
-       
-
-//         //START PATH RESOLUTION
-//         // char *path = getenv("PATH");
-//         // char* path_to_program = tokens_get_token(tokens, 0);
-
-//         char* rest_of_args[tokens_get_length(tokens) + 1];
-//         for(int i = 0; i < tokens_get_length(tokens); i++) {
-//           rest_of_args[i] = tokens_get_token(tokens, i);
-//         }
-//         //append null pointer to args
-//         rest_of_args[tokens_get_length(tokens)] = NULL;
-//         //child code execution
-        
-//         char *path = getenv("PATH");
-//         char* path_to_program = tokens_get_token(tokens, 0);
-//         char *saveptr;
-//         char* token = strtok_r(path, ":", &saveptr);
-//         //while token not null or exec keeps failing
-//         while ((token = (char*) strtok_r(NULL, ":", &saveptr))) {
-//           char full_path[2048];
-//           strcat(token, "/");
-//           strcat(token, path_to_program);
-//           strcpy(full_path, token); //use slashes when concatenating paths
-//           execv(full_path, rest_of_args);
-//         }
-//       }
-        
-//        else {
-//         // if(inNeedToClose) {
-//         //   close(inFD);
-//         // }
-//         // if(outNeedToClose) {
-//         //   close(outFD);
-//         // }
-//         int status;
-//         wait(&status);
-//       }
-//     }
-
-//     if (shell_is_interactive)
-//       /* Please only print shell prompts when standard input is not a tty */
-//       fprintf(stdout, "%d: ", ++line_num);
-
-//     /* Clean up memory */
-//     tokens_destroy(tokens);
-//   }
-
-//   return 0;
-// }
