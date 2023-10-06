@@ -67,11 +67,6 @@ int cmd_pwd(unused struct tokens* tokens) {
 }
 
 int cmd_cd(unused struct tokens* tokens) {
-  //int err = chdir(tokens);
-  // char buf[1024];
-  // int length = tokens_get_length(tokens);
-  // strcpy(buf, tokens_get_token(tokens, length - 1));
-  // return chdir(buf);
   return chdir(tokens_get_token(tokens, 1));
 }
 
@@ -131,7 +126,6 @@ int main(unused int argc, unused char* argv[]) {
       /* REPLACE this to run commands as programs. */
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
       //which calls one of the functions from the exec family to run the new program
-      char* path_to_program = tokens_get_token(tokens, 0);
  
 
       char* rest_of_args[tokens_get_length(tokens) + 1];
@@ -146,11 +140,26 @@ int main(unused int argc, unused char* argv[]) {
         char *path = getenv("PATH");
         char *saveptr;
         char* token = strtok_r(path, ":", &saveptr);
-        char full_path[2048];
+        char* path_to_program = tokens_get_token(tokens, 0);
         //while token not null or exec keeps failing
-        while ((token = (char*) strtok_r(NULL, ":", &saveptr)) || execv(path_to_program, rest_of_args) == -1) {
-          strcat(token, "/");
-          strcat(full_path, token); //use slashes when concatenating paths
+        while (token != NULL) {
+          if(*path_to_program == '/') {
+            execv(tokens_get_token(tokens, 0), rest_of_args);
+          }
+          char full_path[2048];
+          //printf("token after strcat /\n");
+          strcpy(full_path, token);
+          strcat(full_path, "/");
+          //printf("%s\n", token);
+          //printf("token after strcat filename (wc)\n");
+          strcat(full_path, path_to_program);
+          //printf("%s\n", token);
+          //strcpy(full_path, token);
+          //printf("FULL PATH\n");
+          //printf("%s\n", full_path);
+          execv(full_path, rest_of_args);
+          token = (char*) strtok_r(NULL, ":", &saveptr);
+          
       }
       } else {
         int status;
