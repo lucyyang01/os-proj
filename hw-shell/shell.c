@@ -123,7 +123,7 @@ int main(unused int argc, unused char* argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
-      
+
       //START SETUP
       bool outRedirect = false;
       bool inRedirect = false;
@@ -155,27 +155,14 @@ int main(unused int argc, unused char* argv[]) {
       if ((child_pid = fork()) == 0) {
         //START REDIRECTION
         if (outRedirect) {
-          printf("I GOT HERE!!!!!");
           int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
-          if (outFD == -1) {
-            printf("%s\n", outfile);
-            perror("outfd error");
-          }
-          if (dup2(outFD, STDOUT_FILENO) == -1) {
-            perror("dup2 error");
-          }
+          dup2(outFD, STDOUT_FILENO);
           outRedirect = false;
           close(outFD);
         }
         if (inRedirect) {
           int inFD = open(infile, O_RDONLY);
-          if (inFD == -1) {
-            printf("%s\n", infile);
-            perror("outfd error");
-          }
-          if (dup2(inFD, STDIN_FILENO) == -1) {
-            perror("dup2 error");
-          }
+          dup2(inFD, STDIN_FILENO);
           inRedirect = false;
           close(inFD);
         }
