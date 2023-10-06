@@ -471,58 +471,52 @@ int main(unused int argc, unused char* argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
-
-      //START SETUP
-      bool outRedirect = false;
-      bool inRedirect = false;
-      char* outfile;
-      char* infile;
-      int argSize = 0;
-
-      //PIPE SETUP
-      //instead of only forking one time, set up array of children to fork that handles the case of no pipes
-      //get the number of pipes, then set up the children pid array and use for loop to iterate thru and fork
-      //wait n = children times
-      //change rest_of_args to be an array of args for each process
-      //undefined behavior with passing a 2D array without the number of rows declared into a function
-
-
-      // int numPipes = 0;
-      // char* pipe_args[tokens_get_length(tokens) + 1];
-      char* rest_of_args[tokens_get_length(tokens) + 1];
-      for(int i = 0; i < tokens_get_length(tokens); i++) {
-        //REDIRECTION CHECKS BEGIN
-        if (*tokens_get_token(tokens, i) == '>') {
-          outRedirect = true; 
-          outfile = tokens_get_token(tokens, i + 1);
-          i++; //want i to increment twice to skip the file arg
-          continue; 
-        }
-        if (*tokens_get_token(tokens, i) == '<') {
-          inRedirect = true;
-          infile = tokens_get_token(tokens, i + 1);
-          i++; //want i to increment twice to skip the file arg
-          continue;
-        } 
-        //REDIRECTION CHECKS END
-
-        //PIPE CHECKS BEGIN
-        // if(*tokens_get_token(tokens, i) == '|') {
-        //   numPipes++;
-        //   continue; //don't want to add | to arg arr
-        rest_of_args[argSize] = tokens_get_token(tokens, i);
-        argSize++;
-      }
-
-        //PIPE CHECKS END
-      //append null pointer to args
-      rest_of_args[argSize] = NULL;
-      //END SETUP 
-
       //child process execution
-      pid_t child_pid;
-      if ((child_pid = fork()) == 0) {
+        pid_t child_pid;
+        if ((child_pid = fork()) == 0) {
+          //START SETUP
+        bool outRedirect = false;
+        bool inRedirect = false;
+        char* outfile;
+        char* infile;
+        int argSize = 0;
 
+        //PIPE SETUP
+        //instead of only forking one time, set up array of children to fork that handles the case of no pipes
+        //get the number of pipes, then set up the children pid array and use for loop to iterate thru and fork
+        //wait n = children times
+        //change rest_of_args to be an array of args for each process
+        // int numPipes = 0;
+        // char* pipe_args[tokens_get_length(tokens) + 1];
+        char* rest_of_args[tokens_get_length(tokens) + 1];
+        for(int i = 0; i < tokens_get_length(tokens); i++) {
+          //REDIRECTION CHECKS BEGIN
+          if (*tokens_get_token(tokens, i) == '>') {
+            outRedirect = true; 
+            outfile = tokens_get_token(tokens, i + 1);
+            i++; //want i to increment twice to skip the file arg
+            continue; 
+          }
+          if (*tokens_get_token(tokens, i) == '<') {
+            inRedirect = true;
+            infile = tokens_get_token(tokens, i + 1);
+            i++; //want i to increment twice to skip the file arg
+            continue;
+          } 
+          //REDIRECTION CHECKS END
+
+          //PIPE CHECKS BEGIN
+          // if(*tokens_get_token(tokens, i) == '|') {
+          //   numPipes++;
+          //   continue; //don't want to add | to arg arr
+          rest_of_args[argSize] = tokens_get_token(tokens, i);
+          argSize++;
+        }
+
+          //PIPE CHECKS END
+        //append null pointer to args
+        rest_of_args[argSize] = NULL;
+        //END SETUP 
         //START REDIRECTION
         if (outRedirect) {
           int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
@@ -537,7 +531,6 @@ int main(unused int argc, unused char* argv[]) {
           close(inFD);
         }
         //END REDIRECTION
-
 
         //START PATH RESOLUTION
         char *path = getenv("PATH");
