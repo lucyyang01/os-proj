@@ -1,1 +1,4 @@
 Name|Autograder ID (XXX)|Score|Comment
+Daisy Polanco|069|20|Worked on all deliverables.
+Esther Sue|064|20|Worked on all deliverables.
+Ricky Liu|120|20|Worked on all deliverables.

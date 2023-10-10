@@ -200,53 +200,134 @@ int main(unused int argc, unused char* argv[]) {
           execv(full_path, rest_of_args);
           token = (char*) strtok_r(NULL, ":", &saveptr);
         }
-        }
-      }
         //END PATH RESOLUTION
-      // } else { //we are piping
-      //   //call exec helper numpipes time, each call to exec helper treats it as its own process
-      //   //populate pipes array
-      //   for(int i = 0; i < numPipes; i++) {
-      //     int pipefd[2];
-      //     pipeFDs[i] = pipe(pipefd);
-      //   }
-      //   for(int i = 0; i <= numPipes; i++){
-      //     pid_t child_pid;
-      //     if ((child_pid = fork()) == 0) {
-      //       //START REDIRECTION
-      //       if (outRedirect) {
-      //         int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
-      //         dup2(outFD, STDOUT_FILENO);
-      //         outRedirect = false;
-      //         close(outFD);
-      //       }
-      //       if (inRedirect) {
-      //         int inFD = open(infile, O_RDONLY);
-      //         dup2(inFD, STDIN_FILENO);
-      //         inRedirect = false;
-      //         close(inFD);
-      //       }
-      //       //END REDIRECTION
+        //back in parent
+        } else {
+          int status;
+          wait(&status);
+        }
+      } else { //PIPE BEGINS
+        //POPULATE PIPES ARRAY
+        int pipeFDs[numPipes][2]; 
+        for(int i = 0; i < numPipes; i++) {
+          int pipefd[2];
+          pipe(pipefd);
+          pipeFDs[i][0] = pipefd[0];
+          pipeFDs[i][1] = pipefd[1];
+        }
+        //PARSE ARGUMENTS
+        bool outRedirect = false;
+        bool inRedirect = false;
+        char* outfile;
+        char* infile;
+        int argSize = 0;
 
-      //       //START PATH RESOLUTION
-      //       char *path = getenv("PATH");
-      //       char *saveptr;
-      //       char* token = strtok_r(path, ":", &saveptr);
-      //       char* path_to_program = tokens_get_token(tokens, 0);
-      //       while (token != NULL) {
-      //         if(*path_to_program == '/') {
-      //           execv(tokens_get_token(tokens, 0), rest_of_args);
-      //         }
-      //         char full_path[2048];
-      //         strcpy(full_path, token);
-      //         strcat(full_path, "/");
-      //         strcat(full_path, path_to_program);
-      //         execv(full_path, rest_of_args);
-      //         token = (char*) strtok_r(NULL, ":", &saveptr);
-      //       }
-      //     }               
-      //   }
-      // }
+        int pipeIndices[numPipes + 1][2]; //stores the start, ending index of process i's cmd line arguments 
+        pipeIndices[0][0] = 0;
+
+        char* rest_of_args[tokens_get_length(tokens) + 1];
+        for(int i = 0; i < tokens_get_length(tokens); i++) {
+          //REDIRECTION CHECKS BEGIN
+          if (*tokens_get_token(tokens, i) == '>') {
+            outRedirect = true; 
+            outfile = tokens_get_token(tokens, i + 1);
+            i++; //want i to increment twice to skip the file arg
+            continue; 
+          }
+          if (*tokens_get_token(tokens, i) == '<') {
+            inRedirect = true;
+            infile = tokens_get_token(tokens, i + 1);
+            i++; //want i to increment twice to skip the file arg
+            continue;
+          } 
+          //REDIRECTION CHECKS END
+          //PIPE CHECKS BEGIN
+          if(*tokens_get_token(tokens, i) == '|') {
+            pipeIndices[numPipes][1] = i - 1; 
+            numPipes++;
+            pipeIndices[numPipes][0] = i + 1
+            continue; //don't want to add | to arg arr
+          }
+          //PIPE CHECKS END
+          rest_of_args[argSize] = tokens_get_token(tokens, i);
+          argSize++;
+        }
+
+        //APPEND NULL POINTER TO ARGS
+        rest_of_args[argSize] = NULL;
+
+        //FORK CHILD PROCESSES
+        for(int i = 0; i <= numPipes; i++) {
+          pid_t child_pid;
+          if ((child_pid = fork()) == 0) {
+            //START HANDLE PIPES
+            //i is the process 
+            //we're at the first process
+            if(i == 0) {
+              //0 doesn't pipe stdin
+              //redirect 0's out to pipe1's write
+              dup2(STDOUT_FILENO, pipeFDs[i][1]);
+              close(STDOUT_FILENO);
+            }
+            //we're at the last process
+            elif(i == numPipes) {
+              //last doesn't pipe stdout
+              dup2(STDIN_FILENO, pipeFDs[i - 1][0]);
+              close(STDIN_FILENO);
+            }
+            else { //every other pipe
+            //, processi changes its stdin FD (0) to point to the read end of pipe_arr[i - 1] 
+              dup2(STDIN_FILENO, pipeFDs[i - 1][0]);
+              //and changes its stdout FD (1) to point to the write end of pipe_arr[i]
+              dup2(STDOUT_FILENO, pipeFDs[i][1]);
+              close(STDOUT_FILENO);
+              close(STDIN_FILENO);
+            }
+            //END HANDLE PIPES
+
+            //START REDIRECTION
+            if (outRedirect) {
+              int outFD = open(outfile, O_CREAT | O_RDWR | O_TRUNC, 0666);
+              dup2(outFD, STDOUT_FILENO);
+              outRedirect = false;
+              close(outFD);
+            }
+            if (inRedirect) {
+              int inFD = open(infile, O_RDONLY);
+              dup2(inFD, STDIN_FILENO);
+              inRedirect = false;
+              close(inFD);
+            }
+            //END REDIRECTION
+
+            //START PATH RESOLUTION
+            char *path = getenv("PATH");
+            char *saveptr;
+            char* token = strtok_r(path, ":", &saveptr);
+            char* path_to_program = tokens_get_token(tokens, pipeIndices[numPipes][0]);
+            int pipeIndex = pipeIndices[numPipes][0];
+            while (token != NULL) {
+              token = (char*) strtok_r(NULL, ":", &saveptr);
+              if(*path_to_program == '/') {
+                execv(tokens_get_token(tokens, 0), rest_of_args);
+              }
+              char full_path[2048];
+              strcpy(full_path, token);
+              strcat(full_path, "/");
+              strcat(full_path, path_to_program);
+              execv(full_path, rest_of_args);
+            }
+            //END PATH RESOLUTION
+          } else {
+            //we are in parent
+            close(pipeFDs[i][0]);
+            close(pipeFDs[i][1]);
+            wait(NULL);
+          } 
+
+        }
+
+      }
 
       //PARENT PROCESS CODE CONTINUED
       int status;
@@ -254,13 +335,9 @@ int main(unused int argc, unused char* argv[]) {
       while(i <= numPipes) {
         wait(&status);
         i++;
-      }
-
-
-
-      
-      
-      
+        //clsoe fds in the 
+        
+      }    
         //parent process execution
           
         //SIGNALLING
