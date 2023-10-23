@@ -42,12 +42,35 @@ pub fn main() -> Result<()> {
 
 async fn listen(port: u16) -> Result<()> {
     // Hint: you should call `handle_socket` in this function.
-    todo!("TODO: Part 2")
+    let addr = SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), port);
+    let listener = TcpListener::bind(&addr).await?;
+
+    while let Ok((socket, _)) = listener.accept().await {
+        tokio::spawn(handle_socket(socket));
+    }
+
+    Ok(())
 }
 
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
-    todo!("TODO: Part 3")
+    //get the request from the socket
+    let mut buf = [0; 1024];
+    //do i need to call tcpstream::connect
+    let bytes_read = socket.read(&mut buf).await?; //need bytes read for the content header
+    let request = str::from_utf8_lossy(&mut buf);
+    
+    //parse request
+    let parsed = http::parse_request(&request); //how do i handle result type
+    let path = parsed.path; 
+
+    //prepend . to path?
+
+    //if the file denoted by path exists
+
+
+    if let 
+    Ok(())
 }
 
 // You are free (and encouraged) to add other funtions to this file.
