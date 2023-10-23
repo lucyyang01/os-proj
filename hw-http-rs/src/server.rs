@@ -54,22 +54,22 @@ async fn listen(port: u16) -> Result<()> {
 
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
-    //get the request from the socket
-    let mut buf = [0; 1024];
-    //do i need to call tcpstream::connect
-    let bytes_read = socket.read(&mut buf).await?; //need bytes read for the content header
-    let request = str::from_utf8_lossy(&mut buf);
+    // //get the request from the socket
+    // let mut buf = [0; 1024];
+    // //do i need to call tcpstream::connect
+    // let bytes_read = socket.read(&mut buf).await?; //need bytes read for the content header
+    // let request = str::from_utf8_lossy(&mut buf);
     
-    //parse request
-    let parsed = http::parse_request(&request); //how do i handle result type
-    let path = parsed.path; 
+    // //parse request
+    // let parsed = http::parse_request(&request); //how do i handle result type
+    // let path = parsed.path; 
 
-    //prepend . to path?
+    // //prepend . to path?
 
-    //if the file denoted by path exists
+    // //if the file denoted by path exists
 
 
-    if let 
+    // if let 
     Ok(())
 }
 
