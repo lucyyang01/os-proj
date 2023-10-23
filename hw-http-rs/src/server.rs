@@ -34,6 +34,7 @@ pub fn main() -> Result<()> {
     log::info!("Num threads:\t{}", args.num_threads);
     log::info!("Directory:\t\t{}", &args.files);
     log::info!("----------------------------------");
+    println!("hello sohom");
 
     // Initialize a thread pool that starts running `listen`
     tokio::runtime::Builder::new_multi_thread()
@@ -45,7 +46,9 @@ pub fn main() -> Result<()> {
 
 async fn listen(port: u16) -> Result<()> {
     // Hint: you should call `handle_socket` in this function.
-    let addr = SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), port);
+    println!("listen");
+
+    let addr = format!("0.0.0.0:{}", port).parse::<SocketAddrV4>()?;
     let listener = TcpListener::bind(&addr).await?;
 
     while let Ok((socket, _)) = listener.accept().await {
@@ -56,29 +59,34 @@ async fn listen(port: u16) -> Result<()> {
 
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
+    println!("Handle socket");
     //parse request
     let parsed = parse_request(&mut socket).await?; //parsed is request struct
     let fp = parsed.path.clone();
-    let mut file = match File::open(parsed.path).await {
+    println!("fp: {:?}", fp);  
+    let file_path = format!(".{}", fp);
+    println!("file_path: {:?}", file_path);  
+    //let mut file = File::open(file_path).await?;
+
+    let mut file = match File::open(file_path).await {
         Ok(file) => file,
         Err(_) => {
-            start_response(&mut socket, 404);
+            start_response(&mut socket, 404).await?;
             return Ok(()); 
         }
     };
-    let file_path = format!(".{}", fp);
+
     let mime_type = get_mime_type(&fp);
-    //get file's metadata
+    println!("mime type: {:?}", mime_type);
     let metadata = file.metadata().await?;
     let filesize = metadata.len().to_string(); //this is type u64, convert to string
-    start_response(&mut socket, 200);
-    send_header(&mut socket, &mime_type, &filesize);
-    end_headers(&mut socket);
+    start_response(&mut socket, 200).await?;
+    send_header(&mut socket, &mime_type, &filesize).await?;
+    end_headers(&mut socket).await?;
     loop {
         let mut buf = [0; 1024]; //fs::read returns a vector already
         let bytes_read = file.read_exact(&mut buf).await?;
         if  bytes_read < 1024 {
-            //return Ok(());
             socket.try_write(&buf);
             break;
         }
@@ -87,8 +95,8 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
             continue;
         }
     }
+    //println!("finished");
     Ok(())
-
 }
 
 //if path.exists()
