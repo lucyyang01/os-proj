@@ -46,7 +46,7 @@ pub fn main() -> Result<()> {
 
 async fn listen(port: u16) -> Result<()> {
     // Hint: you should call `handle_socket` in this function.
-    println!("listen");
+    //println!("listen");
 
     let addr = format!("0.0.0.0:{}", port).parse::<SocketAddrV4>()?;
     let listener = TcpListener::bind(&addr).await?;
@@ -59,13 +59,13 @@ async fn listen(port: u16) -> Result<()> {
 
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
-    println!("Handle socket");
+    //println!("Handle socket");
     //parse request
     let parsed = parse_request(&mut socket).await?; //parsed is request struct
     let fp = parsed.path.clone();
     println!("fp: {:?}", fp);  
     let file_path = format!(".{}", fp);
-    println!("file_path: {:?}", file_path);  
+    //println!("file_path: {:?}", file_path);  
     //let mut file = File::open(file_path).await?;
 
     let mut file = match File::open(file_path).await {
@@ -77,27 +77,30 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     };
 
     let mime_type = get_mime_type(&fp);
-    println!("mime type: {:?}", mime_type);
+    //println!("mime type: {:?}", mime_type);
     let metadata = file.metadata().await?;
     let filesize = metadata.len().to_string(); //this is type u64, convert to string
-    println!("file size: {:?}", filesize);
+    //println!("file size: {:?}", filesize);
     start_response(&mut socket, 200).await?;
     let h1 = "Content-Type";
     send_header(&mut socket, &h1, &mime_type).await?;
     let h2 = "Content-Length";
     send_header(&mut socket, &h2, &filesize).await?;
-    end_headers(&mut socket).await?;
+    end_headers(&mut socket).await?;      
     loop {
-        let mut buf = [0; 1024]; //fs::read returns a vector already
-        let bytes_read = file.read_exact(&mut buf).await?;
-        if  bytes_read < 1024 {
-            socket.try_write(&buf);
+         //fs::read returns a vector already
+        let mut buf = [0; 1024];
+        //println!("We made it to before bytes_read!");
+        let bytes_read = file.read(&mut buf).await?;
+        //println!("bytes read: {:?}", bytes_read);
+        //we finished reading
+        //println!("{}",bytes_read < 1024);
+        if bytes_read < 1024 {
+            socket.try_write(&buf[..bytes_read]);
             break;
         }
-        else {
-            socket.try_write(&buf);
-            continue;
-        }
+        socket.try_write(&buf[..bytes_read]);
+
     }
     //println!("finished");
     Ok(())
