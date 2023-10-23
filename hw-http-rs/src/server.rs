@@ -80,8 +80,12 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     println!("mime type: {:?}", mime_type);
     let metadata = file.metadata().await?;
     let filesize = metadata.len().to_string(); //this is type u64, convert to string
+    println!("file size: {:?}", filesize);
     start_response(&mut socket, 200).await?;
-    send_header(&mut socket, &mime_type, &filesize).await?;
+    let h1 = "Content-Type";
+    send_header(&mut socket, &h1, &mime_type).await?;
+    let h2 = "Content-Length";
+    send_header(&mut socket, &h2, &filesize).await?;
     end_headers(&mut socket).await?;
     loop {
         let mut buf = [0; 1024]; //fs::read returns a vector already
