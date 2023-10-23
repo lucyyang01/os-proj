@@ -8,8 +8,11 @@ use crate::stats::*;
 
 use clap::Parser;
 use tokio::net::{TcpListener, TcpStream};
+use tokio::io::AsyncReadExt;
 
 use anyhow::Result;
+use tokio::fs::File;
+
 
 pub fn main() -> Result<()> {
     // Configure logging
@@ -48,30 +51,47 @@ async fn listen(port: u16) -> Result<()> {
     while let Ok((socket, _)) = listener.accept().await {
         tokio::spawn(handle_socket(socket));
     }
-
     Ok(())
 }
 
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
-    // //get the request from the socket
-    // let mut buf = [0; 1024];
-    // //do i need to call tcpstream::connect
-    // let bytes_read = socket.read(&mut buf).await?; //need bytes read for the content header
-    // let request = str::from_utf8_lossy(&mut buf);
-    
-    // //parse request
-    // let parsed = http::parse_request(&request); //how do i handle result type
-    // let path = parsed.path; 
-
-    // //prepend . to path?
-
-    // //if the file denoted by path exists
-
-
-    // if let 
+    //parse request
+    let parsed = parse_request(&mut socket).await?; //parsed is request struct
+    let fp = parsed.path.clone();
+    let mut file = match File::open(parsed.path).await {
+        Ok(file) => file,
+        Err(_) => {
+            start_response(&mut socket, 404);
+            return Ok(()); 
+        }
+    };
+    let file_path = format!(".{}", fp);
+    let mime_type = get_mime_type(&fp);
+    //get file's metadata
+    let metadata = file.metadata().await?;
+    let filesize = metadata.len().to_string(); //this is type u64, convert to string
+    start_response(&mut socket, 200);
+    send_header(&mut socket, &mime_type, &filesize);
+    end_headers(&mut socket);
+    loop {
+        let mut buf = [0; 1024]; //fs::read returns a vector already
+        let bytes_read = file.read_exact(&mut buf).await?;
+        if  bytes_read < 1024 {
+            //return Ok(());
+            socket.try_write(&buf);
+            break;
+        }
+        else {
+            socket.try_write(&buf);
+            continue;
+        }
+    }
     Ok(())
+
 }
+
+//if path.exists()
 
 // You are free (and encouraged) to add other funtions to this file.
 // You can also create your own modules as you see fit.
