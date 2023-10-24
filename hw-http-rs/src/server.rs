@@ -62,13 +62,18 @@ async fn listen(port: u16) -> Result<()> {
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     println!("Handle socket");
-
     //parse request
-    let parsed = parse_request(&mut socket).await?; //parsed is request struct
-    let file_path = format!(".{}", parsed.path);
-    let mut f = File::open(&file_path).await?;
+    let parsed = parse_request(&mut socket).await?; 
+    let file_path = format!(".{}", parsed.path); //append . to filepath
+    let mut f = match File::open(&file_path).await {
+        Ok(f) => f,
+        Err(_) => {
+            start_response(&mut socket, 404).await?;
+            return Ok(()); 
+        }
+    };
     
-    let fp = parsed.path.clone();
+    let fp = parsed.path.clone(); //clone parsed.path (without the .)
     println!("here");
     let metadata = f.metadata().await?;
     println!("metadata: {:?}", metadata);  
@@ -142,7 +147,7 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
         }
     } else if metadata.is_file() {
         println!("reached file");
-    
+
         let mime_type = get_mime_type(&fp);
         //println!("mime type: {:?}", mime_type);
         let metadata = f.metadata().await?;
