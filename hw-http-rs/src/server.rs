@@ -1,4 +1,5 @@
 use std::env;
+use std::fs::metadata;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::path::Path;
 
@@ -47,7 +48,7 @@ pub fn main() -> Result<()> {
 
 async fn listen(port: u16) -> Result<()> {
     // Hint: you should call `handle_socket` in this function.
-    //println!("listen");
+    println!("listen");
 
     let addr = format!("0.0.0.0:{}", port).parse::<SocketAddrV4>()?;
     let listener = TcpListener::bind(&addr).await?;
@@ -60,23 +61,29 @@ async fn listen(port: u16) -> Result<()> {
 
 // Handles a single connection via `socket`.
 async fn handle_socket(mut socket: TcpStream) -> Result<()> {
-    //println!("Handle socket");
+    println!("Handle socket");
 
     //parse request
     let parsed = parse_request(&mut socket).await?; //parsed is request struct
-    let f = tokio::fs::File::open(&parsed.path).await?;
+    let file_path = format!(".{}", parsed.path);
+    let f = File::open(&file_path).await?;
+    
     let fp = parsed.path.clone();
-
+    println!("here");
     let metadata = f.metadata().await?;
-    //println!("fp: {:?}", fp);  
-    //check if path is file path or directory path
+    println!("metadata: {:?}", metadata);  
+
     if metadata.is_dir() {
+        println!("reached dir");
         //check if directory contains an index file
         //append a trailing slash
         let file_path = format!("{}/", fp);
+        println!("filepath: {:?}", file_path);  
         let complete_idx_path = format_index(&fp);
         //format this into a paht
         let path = Path::new(&complete_idx_path);
+        println!("filepath: {:?}", complete_idx_path);  
+        println!("path exists: {:?}", path.exists());  
         if path.exists() {
             //respond with 200 ok and full contents of index file
             let path_str = path.as_os_str().to_str().unwrap();
@@ -118,13 +125,16 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
             //to generate formatted links to every file insdie the directory and then send it as an http response
             
             //list all files inside directory
+            println!("INDEX DOESN'T EXIST IN DIR");  
             start_response(&mut socket, 200).await?;
             let mime_type = get_mime_type(&file_path);
+            println!("MIME : {:?}", mime_type);  
+
             let h1 = "Content-Type";
             send_header(&mut socket, &h1, &mime_type).await?;
             end_headers(&mut socket).await?;     
             let mut entries = tokio::fs::read_dir(file_path).await?;
-            let mut buf = [0; 1024];
+            //let mut buf = [0; 1024];
             while let Some(entry) = entries.next_entry().await? {
                 //convert pathbuf to string
                 let path_buf = entry.path();
@@ -132,12 +142,13 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
                 let borrow = format!("{}/", fp);
                 let formatted = format_href(&borrow,&path_buf_str);
                 // let h1 = "Content-Type";
-                socket.try_write(&mut buf);
+                socket.try_write(&formatted.as_bytes());
                 // send_header(&mut socket, &h1, &mime_type).await?;
             }
         }
-        //if it's a file
     } else if metadata.is_file() {
+        println!("reached file");
+
         let file_path = format!(".{}", fp);
         
         let mut file = match File::open(file_path).await {
