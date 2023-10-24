@@ -68,17 +68,12 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     let clone_path = file_path.clone();
     //convert to path
     let path = Path::new(&file_path);
-    
-    
-    //println!("here");
-    //let metadata = f.metadata().await?;
-    //println!("metadata: {:?}", metadata);  
+
     //the path exists
     if path.exists() {
         //path is directory
         if path.is_dir() {
             println!("WE REACHED A DIRECTORY");
-
             //add a slash?
             let file_path2 = format!("{}/", file_path);
             //println!("filepath: {:?}", file_path2);  
