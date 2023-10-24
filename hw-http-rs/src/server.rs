@@ -65,43 +65,117 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     //parse request
     let parsed = parse_request(&mut socket).await?; 
     let file_path = format!(".{}", parsed.path); //append . to filepath
-    let mut f = match File::open(&file_path).await {
-        Ok(f) => f,
-        Err(_) => {
-            start_response(&mut socket, 404).await?;
-            return Ok(()); 
-        }
-    };
+    let clone_path = file_path.clone();
+    //convert to path
+    let path = Path::new(&file_path);
     
-    let fp = parsed.path.clone(); //clone parsed.path (without the .)
-    println!("here");
-    let metadata = f.metadata().await?;
-    println!("metadata: {:?}", metadata);  
+    
+    //println!("here");
+    //let metadata = f.metadata().await?;
+    //println!("metadata: {:?}", metadata);  
+    //the path exists
+    if path.exists() {
+        //path is directory
+        if path.is_dir() {
+            println!("WE REACHED A DIRECTORY");
 
-    if metadata.is_dir() {
-        println!("reached dir");
-        //check if directory contains an index file
-        //append a trailing slash
-        let file_path = format!("{}/", fp);
-        println!("filepath: {:?}", file_path);  
-        let complete_idx_path = format_index(&fp);
-        //format this into a paht
-        let path = Path::new(&complete_idx_path);
-        println!("filepath: {:?}", complete_idx_path);  
-        println!("path exists: {:?}", path.exists());  
-        if path.exists() {
-            let path_str = path.as_os_str().to_str().unwrap();
-            start_response(&mut socket, 200).await?;
-            let mut file = match File::open(path_str).await {
-                Ok(file) => file,
+            //add a slash?
+            let file_path2 = format!("{}/", file_path);
+            //println!("filepath: {:?}", file_path2);  
+            let complete_idx_path = format_index(&file_path2);
+            let idx_path = Path::new(&complete_idx_path);
+            //if the index.html file exists, output the contents
+            if idx_path.exists() {
+                println!("INDEX FILE EXISTS");
+
+                let idx_path_clone = complete_idx_path.clone();
+                let mut dir_idx = match File::open(complete_idx_path).await {
+                    Ok(dir_idx) => dir_idx,
+                    Err(_) => {
+                        start_response(&mut socket, 404).await?;
+                        end_headers(&mut socket).await?;
+                        return Ok(()); 
+                    }
+                };
+                let mime_type = get_mime_type(&idx_path_clone);
+                //have to open the file
+                //println!("mime type: {:?}", mime_type);
+                let metadata = dir_idx.metadata().await?;
+                let filesize = metadata.len().to_string(); //this is type u64, convert to string
+                //println!("file size: {:?}", filesize);
+                start_response(&mut socket, 200).await?;
+                let h1 = "Content-Type";
+                send_header(&mut socket, &h1, &mime_type).await?;
+                let h2 = "Content-Length";
+                send_header(&mut socket, &h2, &filesize).await?;
+                end_headers(&mut socket).await?;      
+                loop {
+                    let mut buf = [0; 1024];
+                    //println!("We made it to before bytes_read!");
+                    let bytes_read = dir_idx.read(&mut buf).await?;
+                    if bytes_read < 1024 {
+                        socket.try_write(&buf[..bytes_read]);
+                        break;
+                    }
+                    socket.try_write(&buf[..bytes_read]);
+                }
+            //index.html doesn't exist, so send hyperlinks to every file inside the directory
+            } else {
+                println!("INDEX FILE DOESNT EXIST");
+
+                let cloned_clone_path = clone_path.clone();
+                let mut entries = tokio::fs::read_dir(clone_path).await?;
+                //send headers
+                start_response(&mut socket, 200).await?;
+                let mime_type = "text/html";
+                let h1 = "Content-Type";
+                send_header(&mut socket, &h1, &mime_type).await?;
+                // let h2 = "Content-Length";
+                // send_header(&mut socket, &h2, &filesize).await?;
+                end_headers(&mut socket).await?;   
+                //append . and .. to the list of hyperlinks first 
+                let curr_dir = format_href(&cloned_clone_path, ".");
+                //get parent by calling parent() on pathbuf object
+                let parent = path.parent().unwrap();
+                let parent_path_str = parent.as_os_str().to_str().unwrap();
+                let parent_dir = format_href(&parent_path_str, "..");
+                socket.try_write(&curr_dir.as_bytes());
+                socket.try_write(&parent_dir.as_bytes());
+
+                //let mut buf = [0; 1024];
+                while let Some(entry) = entries.next_entry().await? {
+                    //convert pathbuf to string
+                    let path_buf = entry.path();
+                    let path_buf_str = path_buf.into_os_string().into_string().unwrap();
+                    // println!("pbs : {:?}", path_buf_str);  
+                    // println!("fp : {:?}", fp);  
+                    let filename = entry.file_name();
+                    let filename_str = filename.to_str().unwrap();
+
+                    //let borrow = format!("{}/", fp);
+                    let formatted = format_href(&path_buf_str,&filename_str);
+                    // let h1 = "Content-Type";
+                    socket.try_write(&formatted.as_bytes());
+                    // send_header(&mut socket, &h1, &mime_type).await?;
+                }
+            }
+        //path is a file
+        } else if path.is_file() {
+            //open the file
+            println!("WE REACHED A FILE");
+            let clone_path = file_path.clone();
+            let mut f = match File::open(file_path).await {
+                Ok(f) => f,
                 Err(_) => {
                     start_response(&mut socket, 404).await?;
+                    end_headers(&mut socket).await?;
                     return Ok(()); 
                 }
             };
-            let mime_type = "text/html";
+            let mime_type = get_mime_type(&clone_path);
+            //have to open the file
             //println!("mime type: {:?}", mime_type);
-            let metadata = file.metadata().await?;
+            let metadata = f.metadata().await?;
             let filesize = metadata.len().to_string(); //this is type u64, convert to string
             //println!("file size: {:?}", filesize);
             start_response(&mut socket, 200).await?;
@@ -112,133 +186,34 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
             end_headers(&mut socket).await?;      
             loop {
                 let mut buf = [0; 1024];
-                let bytes_read = file.read(&mut buf).await?;
+                //println!("We made it to before bytes_read!");
+                let bytes_read = f.read(&mut buf).await?;
                 if bytes_read < 1024 {
                     socket.try_write(&buf[..bytes_read]);
                     break;
                 }
                 socket.try_write(&buf[..bytes_read]);
             }
+        //path doesn't exist or another error occurred
         } else {
-            println!("INDEX DOESN'T EXIST IN DIR");  
-            start_response(&mut socket, 200).await?;
-            let mime_type = "text/html";
-            println!("MIME : {:?}", mime_type);  
-            let h1 = "Content-Type";
-            send_header(&mut socket, &h1, &mime_type).await?;
-            let h1 = "Content-Length";
-            let size = 0.to_string();
-            send_header(&mut socket, &h1, &size).await?;
-            end_headers(&mut socket).await?;     
-            let mut entries = tokio::fs::read_dir(file_path).await?;
-            //let mut buf = [0; 1024];
-            while let Some(entry) = entries.next_entry().await? {
-                //convert pathbuf to string
-                let path_buf = entry.path();
-                let path_buf_str = path_buf.into_os_string().into_string().unwrap();
-                println!("pbs : {:?}", path_buf_str);  
-                println!("fp : {:?}", fp);  
-                let filename = entry.file_name();
-                let filename_str = filename.to_str().unwrap();
+            println!("WE REACHED A ERROR");
 
-                //let borrow = format!("{}/", fp);
-                let formatted = format_href(&path_buf_str,&filename_str);
-                // let h1 = "Content-Type";
-                socket.try_write(&formatted.as_bytes());
-                // send_header(&mut socket, &h1, &mime_type).await?;
-            }
-        }
-    } else if metadata.is_file() {
-        println!("reached file");
-
-        let mime_type = get_mime_type(&fp);
-        //println!("mime type: {:?}", mime_type);
-        let metadata = f.metadata().await?;
-        let filesize = metadata.len().to_string(); //this is type u64, convert to string
-        //println!("file size: {:?}", filesize);
-        start_response(&mut socket, 200).await?;
-        let h1 = "Content-Type";
-        send_header(&mut socket, &h1, &mime_type).await?;
-        let h2 = "Content-Length";
-        send_header(&mut socket, &h2, &filesize).await?;
-        end_headers(&mut socket).await?;      
-        loop {
-            let mut buf = [0; 1024];
-            //println!("We made it to before bytes_read!");
-            let bytes_read = f.read(&mut buf).await?;
-            if bytes_read < 1024 {
-                socket.try_write(&buf[..bytes_read]);
-                break;
-            }
-            socket.try_write(&buf[..bytes_read]);
-    
+            //serve 404
+            start_response(&mut socket, 404).await?;
+            end_headers(&mut socket).await?;
+            return Ok(());
         }
     } else {
-        start_response(&mut socket, 404).await?;
-        return Ok(());
-    }
-    //println!("finished");
+        println!("WE REACHED A ERROR");
+
+            //serve 404
+            start_response(&mut socket, 404).await?;
+            end_headers(&mut socket).await?;
+            return Ok(());
+    } 
     Ok(())
 }
 
-//let file_path = format!(".{}", fp);
-        
-        // let mut file = match File::open(file_path).await {
-        //     Ok(file) => file,
-        //     Err(_) => {
-        //         start_response(&mut socket, 404).await?;
-        //         return Ok(()); 
-        //     }
-        // };
-
-// // Handles a single connection via `socket`.
-// async fn handle_socket(mut socket: TcpStream) -> Result<()> {
-//     //println!("Handle socket");
-//     //parse request
-//     let parsed = parse_request(&mut socket).await?; //parsed is request struct
-//     let fp = parsed.path.clone();
-//     println!("fp: {:?}", fp);  
-//     let file_path = format!(".{}", fp);
-//     //println!("file_path: {:?}", file_path);  
-//     //let mut file = File::open(file_path).await?;
-    
-//     let mut file = match File::open(file_path).await {
-//         Ok(file) => file,
-//         Err(_) => {
-//             start_response(&mut socket, 404).await?;
-//             return Ok(()); 
-//         }
-//     };
-
-//     let mime_type = get_mime_type(&fp);
-//     //println!("mime type: {:?}", mime_type);
-//     let metadata = file.metadata().await?;
-//     let filesize = metadata.len().to_string(); //this is type u64, convert to string
-//     //println!("file size: {:?}", filesize);
-//     start_response(&mut socket, 200).await?;
-//     let h1 = "Content-Type";
-//     send_header(&mut socket, &h1, &mime_type).await?;
-//     let h2 = "Content-Length";
-//     send_header(&mut socket, &h2, &filesize).await?;
-//     end_headers(&mut socket).await?;      
-//     loop {
-//          //fs::read returns a vector already
-//         let mut buf = [0; 1024];
-//         //println!("We made it to before bytes_read!");
-//         let bytes_read = file.read(&mut buf).await?;
-//         //println!("bytes read: {:?}", bytes_read);
-//         //we finished reading
-//         //println!("{}",bytes_read < 1024);
-//         if bytes_read < 1024 {
-//             socket.try_write(&buf[..bytes_read]);
-//             break;
-//         }
-//         socket.try_write(&buf[..bytes_read]);
-
-//     }
-//     //println!("finished");
-//     Ok(())
-// }
 
 //if path.exists()
 
