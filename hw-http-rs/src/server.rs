@@ -66,7 +66,7 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     //parse request
     let parsed = parse_request(&mut socket).await?; //parsed is request struct
     let file_path = format!(".{}", parsed.path);
-    let f = File::open(&file_path).await?;
+    let mut f = File::open(&file_path).await?;
     
     let fp = parsed.path.clone();
     println!("here");
@@ -85,10 +85,8 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
         println!("filepath: {:?}", complete_idx_path);  
         println!("path exists: {:?}", path.exists());  
         if path.exists() {
-            //respond with 200 ok and full contents of index file
             let path_str = path.as_os_str().to_str().unwrap();
             start_response(&mut socket, 200).await?;
-            //open file
             let mut file = match File::open(path_str).await {
                 Ok(file) => file,
                 Err(_) => {
@@ -96,7 +94,7 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
                     return Ok(()); 
                 }
             };
-            let mime_type = get_mime_type(&fp);
+            let mime_type = "text/html";
             //println!("mime type: {:?}", mime_type);
             let metadata = file.metadata().await?;
             let filesize = metadata.len().to_string(); //this is type u64, convert to string
@@ -109,11 +107,7 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
             end_headers(&mut socket).await?;      
             loop {
                 let mut buf = [0; 1024];
-                //println!("We made it to before bytes_read!");
                 let bytes_read = file.read(&mut buf).await?;
-                //println!("bytes read: {:?}", bytes_read);
-                //we finished reading
-                //println!("{}",bytes_read < 1024);
                 if bytes_read < 1024 {
                     socket.try_write(&buf[..bytes_read]);
                     break;
@@ -123,7 +117,7 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
         } else {
             println!("INDEX DOESN'T EXIST IN DIR");  
             start_response(&mut socket, 200).await?;
-            let mime_type = get_mime_type(&file_path);
+            let mime_type = "text/html";
             println!("MIME : {:?}", mime_type);  
             let h1 = "Content-Type";
             send_header(&mut socket, &h1, &mime_type).await?;
@@ -148,20 +142,10 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
         }
     } else if metadata.is_file() {
         println!("reached file");
-
-        let file_path = format!(".{}", fp);
-        
-        let mut file = match File::open(file_path).await {
-            Ok(file) => file,
-            Err(_) => {
-                start_response(&mut socket, 404).await?;
-                return Ok(()); 
-            }
-        };
     
         let mime_type = get_mime_type(&fp);
         //println!("mime type: {:?}", mime_type);
-        let metadata = file.metadata().await?;
+        let metadata = f.metadata().await?;
         let filesize = metadata.len().to_string(); //this is type u64, convert to string
         //println!("file size: {:?}", filesize);
         start_response(&mut socket, 200).await?;
@@ -173,10 +157,7 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
         loop {
             let mut buf = [0; 1024];
             //println!("We made it to before bytes_read!");
-            let bytes_read = file.read(&mut buf).await?;
-            //println!("bytes read: {:?}", bytes_read);
-            //we finished reading
-            //println!("{}",bytes_read < 1024);
+            let bytes_read = f.read(&mut buf).await?;
             if bytes_read < 1024 {
                 socket.try_write(&buf[..bytes_read]);
                 break;
@@ -191,6 +172,16 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     //println!("finished");
     Ok(())
 }
+
+//let file_path = format!(".{}", fp);
+        
+        // let mut file = match File::open(file_path).await {
+        //     Ok(file) => file,
+        //     Err(_) => {
+        //         start_response(&mut socket, 404).await?;
+        //         return Ok(()); 
+        //     }
+        // };
 
 // // Handles a single connection via `socket`.
 // async fn handle_socket(mut socket: TcpStream) -> Result<()> {
