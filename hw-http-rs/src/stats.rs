@@ -19,7 +19,7 @@ impl Stats {
     }
 
     pub fn incr(&mut self, s: StatusCode) {
-        self.statuses.entry(s).and_modify(|count| *count += 1).or_insert(0);
+        self.statuses.entry(s).and_modify(|count| *count += 1).or_insert(1);
         // let count = self.statuses.remove(&s).unwrap();
         // let incremented = count + 1;
         // self.statuses.insert(s, incremented);
