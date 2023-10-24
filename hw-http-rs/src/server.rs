@@ -126,6 +126,9 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
             println!("MIME : {:?}", mime_type);  
             let h1 = "Content-Type";
             send_header(&mut socket, &h1, &mime_type).await?;
+            let h1 = "Content-Length";
+            let size = 0.to_string();
+            send_header(&mut socket, &h1, &size).await?;
             end_headers(&mut socket).await?;     
             let mut entries = tokio::fs::read_dir(file_path).await?;
             //let mut buf = [0; 1024];
