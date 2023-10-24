@@ -121,15 +121,10 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
                 socket.try_write(&buf[..bytes_read]);
             }
         } else {
-            //if index.html doesn't exist use format_href  
-            //to generate formatted links to every file insdie the directory and then send it as an http response
-            
-            //list all files inside directory
             println!("INDEX DOESN'T EXIST IN DIR");  
             start_response(&mut socket, 200).await?;
             let mime_type = get_mime_type(&file_path);
             println!("MIME : {:?}", mime_type);  
-
             let h1 = "Content-Type";
             send_header(&mut socket, &h1, &mime_type).await?;
             end_headers(&mut socket).await?;     
@@ -139,8 +134,13 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
                 //convert pathbuf to string
                 let path_buf = entry.path();
                 let path_buf_str = path_buf.into_os_string().into_string().unwrap();
-                let borrow = format!("{}/", fp);
-                let formatted = format_href(&borrow,&path_buf_str);
+                println!("pbs : {:?}", path_buf_str);  
+                println!("fp : {:?}", fp);  
+                let filename = entry.file_name();
+                let filename_str = filename.to_str().unwrap();
+
+                //let borrow = format!("{}/", fp);
+                let formatted = format_href(&path_buf_str,&filename_str);
                 // let h1 = "Content-Type";
                 socket.try_write(&formatted.as_bytes());
                 // send_header(&mut socket, &h1, &mime_type).await?;
@@ -185,7 +185,8 @@ async fn handle_socket(mut socket: TcpStream) -> Result<()> {
     
         }
     } else {
-        return Ok(())
+        start_response(&mut socket, 404).await?;
+        return Ok(());
     }
     //println!("finished");
     Ok(())
