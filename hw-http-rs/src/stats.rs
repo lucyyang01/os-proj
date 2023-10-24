@@ -37,5 +37,8 @@ impl Stats {
 }
 
 pub async fn incr(s: &StatsPtr, sc: StatusCode) {
-    todo!("TODO: Part 4");
+    //A StatsPtr is an atomically reference counted read-write lock guarding a single Stats struct. 
+    //Using an instance of StatsPtr, we can modify the inner Stats struct safely from multiple threads.
+    let mut n = s.write().await;
+    n.incr(sc);
 }
