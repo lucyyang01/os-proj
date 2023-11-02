@@ -268,16 +268,26 @@ bool load(const char* file_name, void (**eip)(void), void** esp) {
             zero_bytes = ROUND_UP(page_offset + phdr.p_memsz, PGSIZE);
           }
           if (!load_segment(file, file_page, (void*)mem_page, read_bytes, zero_bytes, writable))
-            goto done;
+            goto done;   
+          else if (i == ehdr.e_phnum - 1)
+            /* Initialize the heap for the process. */
+            // make sure it's aligned?
+            t->start_heap = mem_page + read_bytes + zero_bytes;
+            t->segbreak = mem_page + read_bytes + zero_bytes;
         } else
           goto done;
         break;
     }
   }
 
+
+
   /* Set up stack. */
   if (!setup_stack(esp))
     goto done;
+  
+  //Thus, you should start the heap at a 
+  //virtual address after the last loadable segment processed by the load function. 
 
   /* Start address. */
   *eip = (void (*)(void))ehdr.e_entry;
@@ -397,10 +407,13 @@ static bool setup_stack(void** esp) {
   uint8_t* kpage;
   bool success = false;
 
+  //allocate page from user pool and zero contents
   kpage = palloc_get_page(PAL_USER | PAL_ZERO);
   if (kpage != NULL) {
+    //pgsize is 4096 bytes
     success = install_page(((uint8_t*)PHYS_BASE) - PGSIZE, kpage, true);
     if (success)
+      //calling convention?
       *esp = PHYS_BASE - 20;
     else
       palloc_free_page(kpage);

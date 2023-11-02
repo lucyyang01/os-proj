@@ -93,6 +93,10 @@ struct thread {
   /* Shared between thread.c and synch.c. */
   struct list_elem elem; /* List element. */
 
+  /* Maintain start and end of heap. */
+  uint8_t* start_heap; /*initialized in load*/
+  uint8_t* segbreak; /*initialize to start of heap after loading process*/
+
 #ifdef USERPROG
   /* Owned by userprog/process.c. */
   uint32_t* pagedir; /* Page directory. */
