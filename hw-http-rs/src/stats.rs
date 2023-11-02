@@ -19,7 +19,10 @@ impl Stats {
     }
 
     pub fn incr(&mut self, s: StatusCode) {
-        todo!("TODO: Part 4");
+        self.statuses.entry(s).and_modify(|count| *count += 1).or_insert(1);
+        // let count = self.statuses.remove(&s).unwrap();
+        // let incremented = count + 1;
+        // self.statuses.insert(s, incremented);
     }
 
     pub fn items(&self) -> Vec<(StatusCode, usize)> {
@@ -34,5 +37,8 @@ impl Stats {
 }
 
 pub async fn incr(s: &StatsPtr, sc: StatusCode) {
-    todo!("TODO: Part 4");
+    //A StatsPtr is an atomically reference counted read-write lock guarding a single Stats struct. 
+    //Using an instance of StatsPtr, we can modify the inner Stats struct safely from multiple threads.
+    let mut n = s.write().await;
+    n.incr(sc);
 }
