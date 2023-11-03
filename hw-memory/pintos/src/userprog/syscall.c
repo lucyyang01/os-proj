@@ -92,8 +92,8 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
     for(int i = 0; i < num_pages; i++) {
       if (pagedir_get_page(t->pagedir, b) == NULL)  {
         pagedir_set_page(t->pagedir, b, kpages, true);
-        kpages += 4096;
-        b += 4096;
+        kpages += PGSIZE;
+        b += PGSIZE;
       }
     }
   } else {
@@ -101,12 +101,11 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
     if (pagedir_get_page(t->pagedir, t->segbreak) == NULL)
       return (uint8_t*) -1;
     //check if we would cross a page boundary by decrementing address
-    int num_pages = (pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) / PGSIZE;
+    int num_pages = ((pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) * -1) / PGSIZE;
     //clear the page
     for(int i = 0; i < num_pages; i++) {
-      pagedir_clear_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
-      //FREE ACTUAL 
       uint8_t* actual_page = pagedir_get_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
+      pagedir_clear_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
       palloc_free_page(actual_page);
     }
   }
