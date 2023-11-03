@@ -17,7 +17,6 @@ void test_main(void) {
 
   /* Allocating a mebibyte should still succeed. */
   heap = sbrk(MEBI);
-
   memset(heap, 162, MEBI);
   for (int i = 0; i != MEBI; i++) {
     ASSERT(heap[i] == 162);
