@@ -80,28 +80,20 @@ static void syscall_close(int fd) {
 
 static uint8_t* syscall_sbrk(intptr_t increment) {
   struct thread* t = thread_current();
+
   if (increment == 0)
     return t->segbreak;
   if (increment > 0) {
-    
-    //if the start and end of the heap are the same, allocate a page
-    if (t->segbreak == t->start_heap) {
-      //allocate a page of memory
-      uint8_t* kpage = palloc_get_page(PAL_USER | PAL_ZERO);
-      //map our page to virtual address
-      if (kpage == NULL)
+    int num_pages = (pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) / PGSIZE;
+    uint8_t* kpages = palloc_get_multiple(PAL_USER | PAL_ZERO, num_pages);
+    if (kpages == NULL)
         return (uint8_t*) -1;
-      if (pagedir_get_page(t->pagedir, t->segbreak) == NULL) 
-        pagedir_set_page(t->pagedir, t->segbreak, kpage, true);
-    }
-    //check to make sure incrementing heap end doesn't cross boundary
-    if (pg_round_up(t->segbreak) != pg_round_up(t->segbreak + increment)) {
-      for (int i = 0; i < (increment / PGSIZE) + ((increment % PGSIZE) != 0); i++ ) {
-        uint8_t* kpage = palloc_get_page(PAL_USER | PAL_ZERO);
-        if (kpage == NULL)
-          return (uint8_t*) -1;
-        if (pagedir_get_page(t->pagedir, t->segbreak + (i * PGSIZE)) == NULL) 
-          pagedir_set_page(t->pagedir, t->segbreak + (i * PGSIZE), kpage, true);
+    int b = t->segbreak;
+    for(int i = 0; i < num_pages; i++) {
+      if (pagedir_get_page(t->pagedir, b) == NULL)  {
+        pagedir_set_page(t->pagedir, b, kpages, true);
+        kpages += 4096;
+        b += 4096;
       }
     }
   } else {
@@ -109,10 +101,13 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
     if (pagedir_get_page(t->pagedir, t->segbreak) == NULL)
       return (uint8_t*) -1;
     //check if we would cross a page boundary by decrementing address
-    if (pg_round_up(t->segbreak) != pg_round_up(t->segbreak + increment)) {
-      for (int i = 0; i < ((increment * -1) / PGSIZE) + (((increment * -1) % PGSIZE) != 0); i++ ) {
-        palloc_free_page(t->segbreak + (PGSIZE * i));
-      }
+    int num_pages = (pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) / PGSIZE;
+    //clear the page
+    for(int i = 0; i < num_pages; i++) {
+      pagedir_clear_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
+      //FREE ACTUAL 
+      uint8_t* actual_page = pagedir_get_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
+      palloc_free_page(actual_page);
     }
   }
   uint8_t* old = t->segbreak;
