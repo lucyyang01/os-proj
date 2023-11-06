@@ -107,16 +107,14 @@ void mm_free(void* ptr) {
       //free the block
       curr->free = true;
       memset(curr->allocated, 0, curr->size);
-      //printf("I REACHED HERE");
       //coalesce one at a time
       //check left block
       if ((curr->prev != NULL) && (curr->prev->free == true)) {
         curr->prev->size += (sizeof(struct memory_block_node) + curr->size);
         curr->prev->next = curr->next;
-        if(curr->next) {
-          curr->next->prev = curr->prev;
-        }
+        curr->next->prev = curr->prev;
         curr = curr->prev;
+        memset(curr->allocated, 0, curr->size);
       }
       //check right block
       if((curr->next != NULL) && (curr->next->free == true)) {
@@ -126,53 +124,9 @@ void mm_free(void* ptr) {
         if(curr->next->next) {
           curr->next->next->prev = curr;
         }
+        memset(curr->next->allocated, 0, curr->next->size);
       }
-
-      //coalesce multiple contiguous blocks of memory
     }
     curr = curr->next;
   }
-
-
-
-
-
-  //COALESCE ONE AT A TIME
-
-
-  // //find the block to free
-  // struct memory_block_node* curr = mem_head;
-  // while(curr != NULL) {
-  //   if (curr->allocated == ptr) {
-  //     curr->free = true;
-  //     //if next consecutive block free
-  //     if (curr->next->free == true) {
-  //       struct memory_block_node* old = curr->next;
-  //       curr->next = curr->next->next;
-  //       old = NULL;
-  //     }
-  //     //if next and prev are free
-  //     // if (curr->next->free == curr->prev->free == true) {
-  //     //   curr->prev->next = curr->next;
-  //     //   curr->next->prev = curr->prev;
-  //     //   curr->next = NULL;
-  //     //   curr->prev = NULL;
-  //     // }
-  //     // //if just next is free
-  //     // if (curr->next->free == true) {
-  //     //   curr->next = curr->next->next;
-  //     //   curr->next->prev = NULL;
-  //     //   curr->next->next = NULL;
-  //     // } 
-  //     // if (curr->prev->free == true) {
-  //     //   curr->prev = curr->prev->prev;
-  //     //   curr->prev->prev = NULL;
-  //     //   curr->prev->next = NULL;
-  //     // } 
-  //     // break;    
-  //     break;
-  //   }
-  //   curr = curr->next;
-  // }
-
 }
