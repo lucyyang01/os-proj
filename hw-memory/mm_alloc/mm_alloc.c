@@ -63,7 +63,7 @@ void* mm_malloc(size_t size) {
         new_block->next = old_next;
         old_next->prev = new_block;
         curr->next = new_block;
-        new_block->size =  old_size - (sizeof(struct memory_block_node) + (new_block->size));
+        new_block->size =  old_size - (sizeof(struct memory_block_node) - (new_block->size));
         new_block->free = true;
         new_block->allocated = sbrk(new_block->size);
         if (new_block->allocated == (void*) -1)
