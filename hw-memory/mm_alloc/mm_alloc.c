@@ -41,11 +41,15 @@ void* mm_malloc(size_t size) {
       if (curr->size > size + sizeof(struct memory_block_node)) {
         //split the current block
         struct memory_block_node* new_block = sbrk(sizeof(struct memory_block_node));
+        if (new_block == (void*) -1)
+          return NULL;
         new_block->prev = mem_tail;
         new_block->next = NULL;
         new_block->size = curr->size - size - sizeof(struct memory_block_node);
         new_block->free = true;
         new_block->allocated = sbrk(size);
+        if (new_block->allocated == (void*) -1)
+          return NULL;
         memset(new_block->allocated, 0, curr->size - size - sizeof(struct memory_block_node));
         return curr->allocated;
       }
@@ -57,12 +61,16 @@ void* mm_malloc(size_t size) {
 
   //if we haven't returned by this point we need to allocate a new block
   struct memory_block_node* new_block1 = sbrk(sizeof(struct memory_block_node));
+  if (new_block1 == (void*) -1)
+    return NULL;
   new_block1->prev = mem_tail;
   mem_tail->next = new_block1;
   new_block1->next = NULL;
   new_block1->size = size;
   new_block1->free = false;
   new_block1->allocated = sbrk(size);
+  if (new_block1->allocated == (void*) -1)
+    return NULL;
   memset(new_block1->allocated, 0, size);
   new_block1 = mem_tail;
   return new_block1->allocated;
