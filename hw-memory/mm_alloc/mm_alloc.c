@@ -36,14 +36,18 @@ void* mm_malloc(size_t size) {
     memset(mem_head->allocated, 0, size);
     return mem_head->allocated;
   }
+  printf("size: %d\n", size);
 
   //iterate through mem to see if there's a block big enough
   struct memory_block_node* curr = mem_head;
   while(curr != NULL) {
+    printf("curr size: %d\n", curr->size);
+    printf("curr free: %d\n", curr->free);
     //if we find a sufficiently large block and it's free
     if(curr->size >= size && curr->free == true) {
       //if the current block can hold anohter block
       if (curr->size >= 1 + size + sizeof(struct memory_block_node)) {
+        printf("i split");
         //split the current block
         struct memory_block_node* new_block = sbrk(sizeof(struct memory_block_node));
         if (new_block == (void*) -1)
@@ -90,4 +94,35 @@ void* mm_realloc(void* ptr, size_t size) {
 
 void mm_free(void* ptr) {
   //TODO: Implement free
+  if(ptr == NULL) 
+    return;
+  //find the block to free
+  struct memory_block_node* curr = mem_head;
+  while(curr != NULL) {
+    if (curr->allocated == ptr) {
+      curr->free = true;
+      //if next and prev are free
+      // if (curr->next->free == curr->prev->free == true) {
+      //   curr->prev->next = curr->next;
+      //   curr->next->prev = curr->prev;
+      //   curr->next = NULL;
+      //   curr->prev = NULL;
+      // }
+      // //if just next is free
+      // if (curr->next->free == true) {
+      //   curr->next = curr->next->next;
+      //   curr->next->prev = NULL;
+      //   curr->next->next = NULL;
+      // } 
+      // if (curr->prev->free == true) {
+      //   curr->prev = curr->prev->prev;
+      //   curr->prev->prev = NULL;
+      //   curr->prev->next = NULL;
+      // } 
+      // break;    
+      break;
+    }
+    curr = curr->next;
+  }
+
 }
