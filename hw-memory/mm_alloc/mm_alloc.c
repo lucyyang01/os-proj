@@ -41,9 +41,6 @@ void* mm_malloc(size_t size) {
   //iterate through mem to see if there's a block big enough
   struct memory_block_node* curr = mem_head;
   while(curr != NULL) {
-    // printf("curr size: %d\n", curr->size);
-    // printf("curr free: %d\n", curr->free);
-    //if we find a sufficiently large block and it's free
     if(curr->size >= size && curr->free == true) {
       //if the current block can hold anohter block
       if (curr->size >= 1 + size + sizeof(struct memory_block_node)) {
@@ -54,31 +51,18 @@ void* mm_malloc(size_t size) {
         curr->size = size;
         curr->free = false;
         //populate new block
-        struct memory_block_node* new_block = curr + curr->size + sizeof(struct memory_block_node);
+        struct memory_block_node* new_block = curr->allocated + curr->size;
         struct memory_block_node* old_next = curr->next;
         new_block->prev = curr;
         new_block->next = old_next;
         old_next->prev = new_block;
         curr->next = new_block;
-        new_block->size =  old_size - (sizeof(struct memory_block_node) - size);
+        new_block->size =  old_size - sizeof(struct memory_block_node) - size;
         new_block->free = true;
         new_block->allocated = new_block + sizeof(struct memory_block_node);
 
         memset(new_block->allocated, 0, new_block->size);
         return curr->allocated;
-        // struct memory_block_node* old_next = curr->next;
-        // new_block->prev = curr;
-        // new_block->next = old_next;
-        // old_next->prev = new_block;
-        // curr->next = new_block;
-        // new_block->size = size;
-        // new_block->free = false;
-        // new_block->allocated = sbrk(size);
-        // if (new_block->allocated == (void*) -1)
-        //   return NULL;
-        // memset(new_block->allocated, 0, new_block->size);
-        // curr->size -= sizeof(struct memory_block_node) + (new_block->size);
-        // return new_block->allocated;
       }
       //current block can't accommodate another block
       return curr->allocated;
