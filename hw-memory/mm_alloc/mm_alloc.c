@@ -106,6 +106,7 @@ void* mm_realloc(void* ptr, size_t size) {
   while(curr != NULL) {
     if (curr->allocated == ptr) 
       break;
+    //copy size of old block if size > odl size, otherwise only copy size
   }
   //curr contains the block we wanna realloc
   int* new_ptr = mm_malloc(size);
@@ -145,7 +146,7 @@ void mm_free(void* ptr) {
         if(curr->next->next) {
           curr->next->next->prev = curr;
         }
-        memset(curr->next->allocated, 0, curr->next->size);
+        memset(curr->allocated, 0, curr->size);
       }
     }
     curr = curr->next;
