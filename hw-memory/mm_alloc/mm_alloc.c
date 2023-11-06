@@ -23,28 +23,34 @@ void* mm_malloc(size_t size) {
   //initialize list if it's empty
   if (mem_head == NULL) {
     mem_head = sbrk(sizeof(struct memory_block_node));
+    if (mem_head == (void*) -1)
+      return NULL;
     mem_head->prev = NULL;
     mem_head->free = false;
     mem_head->next = NULL;
     mem_head->size = size;
     mem_head->allocated = sbrk(size);
+    if (mem_head->allocated == (void*) -1)
+      return NULL;
     mem_tail = mem_head;
+    memset(mem_head->allocated, 0, size);
     return mem_head->allocated;
   }
 
   //iterate through mem to see if there's a block big enough
   struct memory_block_node* curr = mem_head;
   while(curr != NULL) {
-    //if we find a sufficiently large block
-    if(curr->size >= size) {
+    //if we find a sufficiently large block and it's free
+    if(curr->size >= size && curr->free == true) {
       //if the current block can hold anohter block
-      if (curr->size > size + sizeof(struct memory_block_node)) {
+      if (curr->size >= 1 + size + sizeof(struct memory_block_node)) {
         //split the current block
         struct memory_block_node* new_block = sbrk(sizeof(struct memory_block_node));
         if (new_block == (void*) -1)
           return NULL;
-        new_block->prev = mem_tail;
-        new_block->next = NULL;
+        new_block->prev = curr;
+        new_block->next = curr->next;
+        curr->next = new_block;
         new_block->size = curr->size - size - sizeof(struct memory_block_node);
         new_block->free = true;
         new_block->allocated = sbrk(size);

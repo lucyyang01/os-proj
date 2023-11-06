@@ -38,4 +38,24 @@ int main() {
   data[0] = 0x162;
   mm_free(data);
   puts("malloc test successful!");
+
+  puts("malloc 2 big blocks");
+  int* a = mm_malloc(20);
+  assert(a != NULL);
+  int* b = mm_malloc(20);
+  assert(b != NULL);
+  int* old_a = a;
+
+  puts("free a");
+  mm_free(a);
+
+  puts("malloc 2 small blocks");
+  int* c = mm_malloc(8);
+  assert(c != NULL);
+  int* d = mm_malloc(8);
+  assert(d != NULL);
+  assert(c == old_a);
+  puts("block split successful");
+
+
 }
