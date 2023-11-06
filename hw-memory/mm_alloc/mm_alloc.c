@@ -107,6 +107,7 @@ void mm_free(void* ptr) {
     if (curr->allocated == ptr) {
       //free the block
       curr->free = true;
+      memset(curr->allocated, 0, curr->size);
       //printf("I REACHED HERE");
       //coalesce one at a time
       //check left block
