@@ -94,19 +94,22 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
         return (uint8_t*) -1;
       uint32_t b = pg_round_up(t->segbreak);
       for(int i = 0; i < num_pages; i++) {
-        if (pagedir_get_page(t->pagedir, b) == NULL)  {
-          pagedir_set_page(t->pagedir, b, kpages, true);
-          kpages += PGSIZE;
-          b += PGSIZE;
-        }
+        pagedir_set_page(t->pagedir, b, kpages, true);
+        kpages += PGSIZE;
+        b += PGSIZE;
+        // if (pagedir_get_page(t->pagedir, b) == NULL)  {
+        //   pagedir_set_page(t->pagedir, b, kpages, true);
+        //   kpages += PGSIZE;
+        //   b += PGSIZE;
+        // }
       }
     }
   } else {
     //check that current heap end is mapped to a page
-    if (pagedir_get_page(t->pagedir, t->segbreak) == NULL) {
-      printf("PAGE IS NOT MAPPED");
-      return (uint8_t*) -1;
-    }
+    // if (pagedir_get_page(t->pagedir, t->segbreak) == NULL) {
+    //   printf("PAGE IS NOT MAPPED");
+    //   return (uint8_t*) -1;
+    // }
     if (pg_round_up(t->segbreak + increment) != pg_round_up(t->segbreak)) {
       //check if we would cross a page boundary by decrementing address
       uint32_t num_pages = ((pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) * -1) / PGSIZE;
