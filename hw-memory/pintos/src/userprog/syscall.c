@@ -86,57 +86,39 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
   if (increment > 0) {
     // if (t->segbreak + increment > PHYS_BASE)
     //   return (uint8_t*) -1;
-    int rounded = pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak);
-    int num_pages = rounded / PGSIZE;
-    //if num_pages is negative, something bad happened
-    if (num_pages < 0 || num_pages > SIZE_MAX)
-      return (uint8_t*) -1;
-    int b = t->segbreak;
-    for(int i = 0; i < num_pages; i++) {
-      if (pagedir_get_page(t->pagedir, (void*) b) == NULL)  {
-        uint8_t* kpages = palloc_get_page(PAL_USER | PAL_ZERO);
-        if (kpages == NULL) {
-          return (uint8_t*) -1;
+    if (pg_round_up(t->segbreak + increment) != pg_round_up(t->segbreak)) {
+      uint32_t rounded = pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak);
+      uint32_t num_pages = rounded / PGSIZE;
+      uint8_t* kpages = palloc_get_multiple(PAL_USER | PAL_ZERO, num_pages);
+      if (kpages == NULL)
+        return (uint8_t*) -1;
+      uint32_t b = pg_round_up(t->segbreak);
+      for(int i = 0; i < num_pages; i++) {
+        if (pagedir_get_page(t->pagedir, b) == NULL)  {
+          pagedir_set_page(t->pagedir, b, kpages, true);
+          kpages += PGSIZE;
+          b += PGSIZE;
         }
-        //bool success = pagedir_set_page(t->segbreak + (i * PGSIZE), kpages, true);
-        bool success = pagedir_set_page(t->pagedir, b, kpages, true);
-        if(!success) {
-          palloc_free_multiple(t->segbreak + (i * PGSIZE), i);
-          break;
-        }
-        kpages += PGSIZE;
-        b += PGSIZE;
       }
     }
-
-    // if (num_pages > 0) {
-    //   uint8_t* kpages = palloc_get_multiple(PAL_USER | PAL_ZERO, num_pages);
-    //   if (kpages == NULL)
-    //     return (uint8_t*) -1;
-    //   int b = t->segbreak;
-    //   for(int i = 0; i < num_pages; i++) {
-    //     if (pagedir_get_page(t->pagedir, b) == NULL)  {
-    //       bool success = pagedir_set_page(t->pagedir, b, kpages, true);
-    //       if(!success) {
-    //         palloc_free_multiple(t->segbreak + (num_pages * PGSIZE), num_pages);
-    //         break;
-    //       }
-    //       kpages += PGSIZE;
-    //       b += PGSIZE;
-    //     }
-    //   }
-    // }
   } else {
     //check that current heap end is mapped to a page
-    if (pagedir_get_page(t->pagedir, t->segbreak) == NULL)
+    if (pagedir_get_page(t->pagedir, t->segbreak) == NULL) {
+      printf("PAGE IS NOT MAPPED");
       return (uint8_t*) -1;
-    //check if we would cross a page boundary by decrementing address
-    int num_pages = ((pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) * -1) / PGSIZE;
-    //clear the page
-    for(int i = 0; i < num_pages; i++) {
-      uint8_t* actual_page = pagedir_get_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
-      pagedir_clear_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
-      palloc_free_page(actual_page);
+    }
+    if (pg_round_up(t->segbreak + increment) != pg_round_up(t->segbreak)) {
+      //check if we would cross a page boundary by decrementing address
+      uint32_t num_pages = ((pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak)) * -1) / PGSIZE;
+      //clear the page
+      for(int i = 0; i < num_pages; i++) {
+        uint32_t* actual_page = pagedir_get_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
+        if (actual_page == NULL) {
+          continue;
+        }
+        pagedir_clear_page(t->pagedir, pg_round_down(t->segbreak) - (i * PGSIZE));
+        palloc_free_page(actual_page);
+      }
     }
   }
   uint8_t* old = t->segbreak;
