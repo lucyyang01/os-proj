@@ -93,36 +93,42 @@ void* mm_realloc(void* ptr, size_t size) {
 }
 
 void mm_free(void* ptr) {
-  //TODO: Implement free
-  if(ptr == NULL) 
-    return;
-  //find the block to free
-  struct memory_block_node* curr = mem_head;
-  while(curr != NULL) {
-    if (curr->allocated == ptr) {
-      curr->free = true;
-      //if next and prev are free
-      // if (curr->next->free == curr->prev->free == true) {
-      //   curr->prev->next = curr->next;
-      //   curr->next->prev = curr->prev;
-      //   curr->next = NULL;
-      //   curr->prev = NULL;
-      // }
-      // //if just next is free
-      // if (curr->next->free == true) {
-      //   curr->next = curr->next->next;
-      //   curr->next->prev = NULL;
-      //   curr->next->next = NULL;
-      // } 
-      // if (curr->prev->free == true) {
-      //   curr->prev = curr->prev->prev;
-      //   curr->prev->prev = NULL;
-      //   curr->prev->next = NULL;
-      // } 
-      // break;    
-      break;
-    }
-    curr = curr->next;
-  }
+  // //TODO: Implement free
+  // if(ptr == NULL) 
+  //   return;
+  // //find the block to free
+  // struct memory_block_node* curr = mem_head;
+  // while(curr != NULL) {
+  //   if (curr->allocated == ptr) {
+  //     curr->free = true;
+  //     //if next consecutive block free
+  //     if (curr->next->free == true) {
+  //       struct memory_block_node* old = curr->next;
+  //       curr->next = curr->next->next;
+  //       old = NULL;
+  //     }
+  //     //if next and prev are free
+  //     // if (curr->next->free == curr->prev->free == true) {
+  //     //   curr->prev->next = curr->next;
+  //     //   curr->next->prev = curr->prev;
+  //     //   curr->next = NULL;
+  //     //   curr->prev = NULL;
+  //     // }
+  //     // //if just next is free
+  //     // if (curr->next->free == true) {
+  //     //   curr->next = curr->next->next;
+  //     //   curr->next->prev = NULL;
+  //     //   curr->next->next = NULL;
+  //     // } 
+  //     // if (curr->prev->free == true) {
+  //     //   curr->prev = curr->prev->prev;
+  //     //   curr->prev->prev = NULL;
+  //     //   curr->prev->next = NULL;
+  //     // } 
+  //     // break;    
+  //     break;
+  //   }
+  //   curr = curr->next;
+  // }
 
 }
