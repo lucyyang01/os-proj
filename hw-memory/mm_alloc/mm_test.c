@@ -45,8 +45,10 @@ int main() {
   int* b = mm_malloc(20);
   assert(b != NULL);
   int* old_a = a;
-
-  puts("free a");
+  
+  //puts("free a");
+  printf("I REACHED HERE");
+  //printf("I REACHED HERE");
   mm_free(a);
 
   puts("malloc 2 small blocks");
@@ -55,6 +57,7 @@ int main() {
   int* d = mm_malloc(8);
   assert(d != NULL);
   assert(c == old_a);
+  printf("%d\n", *c);
   puts("block split successful");
 
 

@@ -45,6 +45,7 @@ void* mm_malloc(size_t size) {
     printf("curr free: %d\n", curr->free);
     //if we find a sufficiently large block and it's free
     if(curr->size >= size && curr->free == true) {
+      printf("I REACHED HERE");
       //if the current block can hold anohter block
       if (curr->size >= 1 + size + sizeof(struct memory_block_node)) {
         printf("i split");
@@ -56,6 +57,7 @@ void* mm_malloc(size_t size) {
         new_block->next = curr->next;
         curr->next = new_block;
         new_block->size = curr->size - size - sizeof(struct memory_block_node);
+        curr->size = 
         new_block->free = true;
         new_block->allocated = sbrk(size);
         if (new_block->allocated == (void*) -1)
@@ -94,8 +96,50 @@ void* mm_realloc(void* ptr, size_t size) {
 
 void mm_free(void* ptr) {
   // //TODO: Implement free
-  // if(ptr == NULL) 
-  //   return;
+  //printf("I REACHED HERE");
+  if(ptr == NULL) 
+    return;
+  //find the block of memory ptr corresponds to 
+  //printf("I REACHED HERE");
+  struct memory_block_node* curr = mem_head;
+  while(curr != NULL) {
+    //printf("I REACHED HERE");
+    if (curr->allocated == ptr) {
+      //free the block
+      curr->free = true;
+      //printf("I REACHED HERE");
+      //coalesce one at a time
+      //check left block
+      if ((curr->prev != NULL) && (curr->prev->free == true)) {
+        curr->prev->size += (sizeof(struct memory_block_node) + curr->size);
+        curr->prev->next = curr->next;
+        if(curr->next) {
+          curr->next->prev = curr->prev;
+        }
+        curr = curr->prev;
+      }
+      //check right block
+      if((curr->next != NULL) && (curr->next->free == true)) {
+        //if left block has been coalesced, curr is now the left block
+        curr->size += (sizeof(struct memory_block_node) + curr->next->size);
+        curr->next = curr->next->next;
+        if(curr->next->next) {
+          curr->next->next->prev = curr;
+        }
+      }
+
+      //coalesce multiple contiguous blocks of memory
+    }
+    curr = curr->next;
+  }
+
+
+
+
+
+  //COALESCE ONE AT A TIME
+
+
   // //find the block to free
   // struct memory_block_node* curr = mem_head;
   // while(curr != NULL) {
