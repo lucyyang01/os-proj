@@ -36,16 +36,16 @@ void* mm_malloc(size_t size) {
     memset(mem_head->allocated, 0, size);
     return mem_head->allocated;
   }
-  printf("size: %d\n", size);
+  //printf("size: %d\n", size);
 
   //iterate through mem to see if there's a block big enough
   struct memory_block_node* curr = mem_head;
   while(curr != NULL) {
-    printf("curr size: %d\n", curr->size);
-    printf("curr free: %d\n", curr->free);
+    // printf("curr size: %d\n", curr->size);
+    // printf("curr free: %d\n", curr->free);
     //if we find a sufficiently large block and it's free
     if(curr->size >= size && curr->free == true) {
-      printf("I REACHED HERE");
+      //printf("I REACHED HERE");
       //if the current block can hold anohter block
       if (curr->size >= 1 + size + sizeof(struct memory_block_node)) {
         printf("i split");
@@ -84,7 +84,7 @@ void* mm_malloc(size_t size) {
   if (new_block1->allocated == (void*) -1)
     return NULL;
   memset(new_block1->allocated, 0, size);
-  new_block1 = mem_tail;
+  mem_tail = new_block1;
   return new_block1->allocated;
 }
 
