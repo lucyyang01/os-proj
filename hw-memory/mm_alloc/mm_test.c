@@ -40,9 +40,9 @@ int main() {
   // puts("malloc test successful!");
 
   puts("malloc 2 big blocks");
-  int* a = mm_malloc(60);
+  int* a = mm_malloc(100);
   assert(a != NULL);
-  int* b = mm_malloc(60);
+  int* b = mm_malloc(100);
   assert(b != NULL);
   assert(a != b);
   //int* old_a = a;

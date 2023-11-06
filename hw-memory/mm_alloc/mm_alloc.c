@@ -53,17 +53,38 @@ void* mm_malloc(size_t size) {
         struct memory_block_node* new_block = sbrk(sizeof(struct memory_block_node));
         if (new_block == (void*) -1)
           return NULL;
+        //update curr
+        __uint32_t old_size = curr->size;
+        curr->size = size;
+        curr->free = false;
+        //populate new block
+        struct memory_block_node* old_next = curr->next;
         new_block->prev = curr;
-        new_block->next = curr->next;
+        new_block->next = old_next;
+        old_next->prev = new_block;
         curr->next = new_block;
-        new_block->size = sizeof(struct memory_block_node) + (curr->size - size + 1);
-        curr->size -= sizeof(struct memory_block_node) + (curr->size - size + 1);
+        new_block->size =  old_size - (sizeof(struct memory_block_node) + (new_block->size));
         new_block->free = true;
-        new_block->allocated = sbrk(size);
+        new_block->allocated = sbrk(new_block->size);
         if (new_block->allocated == (void*) -1)
           return NULL;
         memset(new_block->allocated, 0, new_block->size);
         return curr->allocated;
+
+
+        // struct memory_block_node* old_next = curr->next;
+        // new_block->prev = curr;
+        // new_block->next = old_next;
+        // old_next->prev = new_block;
+        // curr->next = new_block;
+        // new_block->size = size;
+        // new_block->free = false;
+        // new_block->allocated = sbrk(size);
+        // if (new_block->allocated == (void*) -1)
+        //   return NULL;
+        // memset(new_block->allocated, 0, new_block->size);
+        // curr->size -= sizeof(struct memory_block_node) + (new_block->size);
+        // return new_block->allocated;
       }
       //current block can't accommodate another block
       return curr->allocated;
