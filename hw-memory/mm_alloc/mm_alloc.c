@@ -110,9 +110,21 @@ void* mm_realloc(void* ptr, size_t size) {
   }
   //curr contains the block we wanna realloc
   int* new_ptr = mm_malloc(size);
+  struct memory_block_node* new = mem_head;
+  while(new != NULL) {
+    if (new->allocated == new_ptr) 
+      break;
+    //copy size of old block if size > odl size, otherwise only copy size
+  }
+  //if o
+  if(new->size >= size) 
+    memcpy(new->allocated, curr->allocated, curr->size);
+  else
+    memcpy(new->allocated, curr->allocated, size);
+
   //memcpy old data to block
-  memcpy(new_ptr + sizeof(struct memory_block_node), curr->allocated, curr->size);
-  return NULL;
+  mm_free(curr);
+  return new->allocated;
 }
 
 void mm_free(void* ptr) {
