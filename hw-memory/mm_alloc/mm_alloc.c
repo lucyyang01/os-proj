@@ -89,7 +89,28 @@ void* mm_malloc(size_t size) {
 
 void* mm_realloc(void* ptr, size_t size) {
   //TODO: Implement realloc
-
+  //mm_malloc a block of desired size
+  //memcpy old data to block
+  //mm_free ptr
+  //get the old block
+  if(size == 0) {
+    mm_free(ptr);
+    return NULL;
+  }
+  if(ptr == NULL) {
+    if (size == 0)
+      return NULL;
+    return mm_malloc(size);
+  }  
+  struct memory_block_node* curr = mem_head;
+  while(curr != NULL) {
+    if (curr->allocated == ptr) 
+      break;
+  }
+  //curr contains the block we wanna realloc
+  int* new_ptr = mm_malloc(size);
+  //memcpy old data to block
+  memcpy(new_ptr + sizeof(struct memory_block_node), curr->allocated, curr->size);
   return NULL;
 }
 
