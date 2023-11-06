@@ -54,7 +54,7 @@ void* mm_malloc(size_t size) {
         curr->size = size;
         curr->free = false;
         //populate new block
-        struct memory_block_node* new_block = curr + curr->size;
+        struct memory_block_node* new_block = curr + curr->size + sizeof(struct memory_block_node);
         struct memory_block_node* old_next = curr->next;
         new_block->prev = curr;
         new_block->next = old_next;
