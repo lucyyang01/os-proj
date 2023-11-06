@@ -1,3 +1,10 @@
 {
-    "terminal.integrated.scrollback": 10000
+    "terminal.integrated.scrollback": 10000,
+    "files.associations": {
+        "cstdlib": "c",
+        "*.tcc": "c",
+        "cmath": "c",
+        "numeric": "c",
+        "cinttypes": "c"
+    }
 }
