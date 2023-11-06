@@ -18,7 +18,7 @@ struct memory_block_node {
     struct memory_block_node* next;
     bool free; /* if this block of memory is free*/
     __uint32_t size; /* size of allocated memory block */
-    __uint8_t allocated; 
+    __uint8_t* allocated; 
 };
 
 void* mm_malloc(size_t size);
