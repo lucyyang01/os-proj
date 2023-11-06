@@ -39,29 +39,28 @@ int main() {
   // mm_free(data);
   // puts("malloc test successful!");
 
-  //a and b are evaluating to the same block
   puts("malloc 2 big blocks");
-  int* a = mm_malloc(20);
+  int* a = mm_malloc(60);
   assert(a != NULL);
-  int* b = mm_malloc(20);
+  int* b = mm_malloc(60);
   assert(b != NULL);
-  int* old_a = a;
-  printf("%d\n", *old_a);
+  assert(a != b);
+  //int* old_a = a;
+  //printf("%d\n", *old_a);
   
   //puts("free a");
   //printf("I REACHED HERE");
   //printf("I REACHED HERE");
   mm_free(a);
 
+  //c, d evaluating to same address
   puts("malloc 2 small blocks");
   int* c = mm_malloc(8);
   printf("%d\n", *c);
   assert(c != NULL);
   int* d = mm_malloc(8);
   assert(d != NULL);
-  assert(c == old_a);
+  assert(c == a);
   //printf("%d\n", *c);
   puts("block split successful");
-
-
 }

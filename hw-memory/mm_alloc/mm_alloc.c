@@ -56,13 +56,13 @@ void* mm_malloc(size_t size) {
         new_block->prev = curr;
         new_block->next = curr->next;
         curr->next = new_block;
-        new_block->size = curr->size - size - sizeof(struct memory_block_node);
-        curr->size = 
+        new_block->size = sizeof(struct memory_block_node) + (curr->size - size + 1);
+        curr->size -= sizeof(struct memory_block_node) + (curr->size - size + 1);
         new_block->free = true;
         new_block->allocated = sbrk(size);
         if (new_block->allocated == (void*) -1)
           return NULL;
-        memset(new_block->allocated, 0, curr->size - size - sizeof(struct memory_block_node));
+        memset(new_block->allocated, 0, new_block->size);
         return curr->allocated;
       }
       //current block can't accommodate another block
