@@ -110,21 +110,15 @@ void* mm_realloc(void* ptr, size_t size) {
   }
   //curr contains the block we wanna realloc
   int* new_ptr = mm_malloc(size);
-  struct memory_block_node* new = mem_head;
-  while(new != NULL) {
-    if (new->allocated == new_ptr) 
-      break;
-    //copy size of old block if size > odl size, otherwise only copy size
-  }
-  //if o
-  if(new->size >= size) 
-    memcpy(new->allocated, curr->allocated, curr->size);
+  //if old block's size
+  if(curr->size < size) 
+    memcpy(new_ptr, curr->allocated, curr->size);
   else
-    memcpy(new->allocated, curr->allocated, size);
+    memcpy(new_ptr, curr->allocated, size);
 
   //memcpy old data to block
   mm_free(curr);
-  return new->allocated;
+  return new_ptr;
 }
 
 void mm_free(void* ptr) {
@@ -141,8 +135,7 @@ void mm_free(void* ptr) {
       //free the block
       curr->free = true;
       memset(curr->allocated, 0, curr->size);
-      //coalesce one at a time
-      //check left block
+
       if ((curr->prev != NULL) && (curr->prev->free == true)) {
         curr->prev->size += (sizeof(struct memory_block_node) + curr->size);
         curr->prev->next = curr->next;
@@ -152,7 +145,6 @@ void mm_free(void* ptr) {
       }
       //check right block
       if((curr->next != NULL) && (curr->next->free == true)) {
-        //if left block has been coalesced, curr is now the left block
         curr->size += (sizeof(struct memory_block_node) + curr->next->size);
         curr->next = curr->next->next;
         if(curr->next->next) {
