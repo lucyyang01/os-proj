@@ -48,9 +48,13 @@ int main() {
 
   int* rp = mm_realloc(p, 100);
   assert(p != rp);
+  int* save_rp = rp;
 
   int* s = mm_malloc(50);
   assert(s == p);
+  int* largep = mm_realloc(p, 100239842947239847);
+  assert(largep == NULL);
+  assert(rp == p);
   puts("simple realloc");
 
 
