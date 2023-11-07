@@ -46,15 +46,15 @@ int main() {
   int* q = mm_malloc(50);
   assert(p != q);
 
-  int* rp = mm_realloc(p, 100);
+  int* rp = mm_realloc(p, 100); //rp is new position of p
   assert(p != rp);
   int* save_rp = rp;
 
   int* s = mm_malloc(50);
   assert(s == p);
-  int* largep = mm_realloc(p, 100239842947239847);
+  int* largep = mm_realloc(rp, sizeof(int) * 20000000000);
   assert(largep == NULL);
-  assert(rp == p);
+  assert(save_rp == rp);
   puts("simple realloc");
 
 
