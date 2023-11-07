@@ -36,6 +36,9 @@ void* mm_malloc(size_t size) {
     memset(mem_head->allocated, 0, size);
     return mem_head->allocated;
   }
+
+  if (size >= 4294967295)
+    return NULL;
   //printf("size: %d\n", size);
 
   //iterate through mem to see if there's a block big enough
