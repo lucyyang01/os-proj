@@ -115,7 +115,6 @@ void* mm_realloc(void* ptr, size_t size) {
     memcpy(new_ptr, curr->allocated, curr->size);
   else
     memcpy(new_ptr, curr->allocated, size);
-
   //memcpy old data to block
   mm_free(curr);
   return new_ptr;
@@ -138,8 +137,10 @@ void mm_free(void* ptr) {
 
       if ((curr->prev != NULL) && (curr->prev->free == true)) {
         curr->prev->size += (sizeof(struct memory_block_node) + curr->size);
-        curr->prev->next = curr->next;
-        curr->next->prev = curr->prev;
+        curr->prev->next = curr->next; //curr->next may not exist if this is the last node
+        if (curr->next) {
+          curr->next->prev = curr->prev;
+        }
         curr = curr->prev;
         memset(curr->allocated, 0, curr->size);
       }

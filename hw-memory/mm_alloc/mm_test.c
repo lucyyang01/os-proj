@@ -39,28 +39,38 @@ int main() {
   // mm_free(data);
   // puts("malloc test successful!");
 
-  puts("malloc 2 big blocks");
-  int* a = mm_malloc(100);
-  assert(a != NULL);
-  int* b = mm_malloc(100);
-  assert(b != NULL);
-  assert(a != b);
-  //int* old_a = a;
-  //printf("%d\n", *old_a);
+  // puts("malloc 2 big blocks");
+  // int* a = mm_malloc(100);
+  // assert(a != NULL);
+  // int* b = mm_malloc(100);
+  // assert(b != NULL);
+  // assert(a != b);
+  // //int* old_a = a;
+  // //printf("%d\n", *old_a);
   
-  //puts("free a");
-  //printf("I REACHED HERE");
-  //printf("I REACHED HERE");
-  mm_free(a);
+  // //puts("free a");
+  // //printf("I REACHED HERE");
+  // //printf("I REACHED HERE");
+  // mm_free(a);
 
-  //c, d evaluating to same address
-  puts("malloc 2 small blocks");
-  int* c = mm_malloc(8);
-  printf("%d\n", *c);
-  assert(c != NULL);
-  int* d = mm_malloc(8);
-  assert(d != NULL);
-  assert(c == a);
-  //printf("%d\n", *c);
-  puts("block split successful");
+  // //c, d evaluating to same address
+  // puts("malloc 2 small blocks");
+  // int* c = mm_malloc(8);
+  // printf("%d\n", *c);
+  // assert(c != NULL);
+  // int* d = mm_malloc(8);
+  // assert(d != NULL);
+  // assert(c == a);
+  // //printf("%d\n", *c);
+  // puts("block split successful");
+  int* a = mm_malloc(100);
+  int* b = mm_malloc(100);
+  assert(a != b);
+
+  mm_free(a);
+  mm_free(b);
+
+  int* c = mm_malloc(200);
+  assert(a == c);
+  puts("simple coalesce");
 }
