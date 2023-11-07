@@ -23,14 +23,14 @@ void* mm_malloc(size_t size) {
   //initialize list if it's empty
   if (mem_head == NULL) {
     mem_head = sbrk(sizeof(struct memory_block_node));
-    if (mem_head == NULL)
+    if (mem_head == (void*) -1)
       return NULL;
     mem_head->prev = NULL;
     mem_head->free = false;
     mem_head->next = NULL;
     mem_head->size = size;
     mem_head->allocated = sbrk(size);
-    if (mem_head->allocated == NULL)
+    if (mem_head->allocated == (void*) -1)
       return NULL;
     mem_tail = mem_head;
     memset(mem_head->allocated, 0, size);
@@ -73,7 +73,7 @@ void* mm_malloc(size_t size) {
 
   //if we haven't returned by this point we need to allocate a new block
   struct memory_block_node* new_block1 = sbrk(sizeof(struct memory_block_node));
-  if (new_block1 == NULL)
+  if (new_block1 == (void*) -1)
     return NULL;
   new_block1->prev = mem_tail;
   mem_tail->next = new_block1;
@@ -81,7 +81,7 @@ void* mm_malloc(size_t size) {
   new_block1->size = size;
   new_block1->free = false;
   new_block1->allocated = sbrk(size);
-  if (new_block1->allocated == NULL)
+  if (new_block1->allocated == (void*) -1)
     return NULL;
   memset(new_block1->allocated, 0, size);
   mem_tail = new_block1;
