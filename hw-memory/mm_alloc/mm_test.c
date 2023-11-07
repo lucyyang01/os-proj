@@ -63,14 +63,24 @@ int main() {
   // assert(c == a);
   // //printf("%d\n", *c);
   // puts("block split successful");
-  int* a = mm_malloc(100);
-  int* b = mm_malloc(100);
+  // I call p = malloc(0).
+  //       Then I call free(p).
+  //       Then I call free(NULL).
+  //       Then I call realloc(NULL, 64).
+  //       Then I call realloc(NULL, 0).
+  //       Then I call realloc(ptr, 0), where ptr is a valid pointer.
+  //       I check that ptr has been freed.
+
+
+  int* a = mm_malloc(10);
+  int* b = mm_malloc(10);
   assert(a != b);
 
   mm_free(a);
   mm_free(b);
 
-  int* c = mm_malloc(200);
+  int* c = mm_malloc(4);
   assert(a == c);
+  mm_free(c);
   puts("simple coalesce");
 }

@@ -55,7 +55,9 @@ void* mm_malloc(size_t size) {
         struct memory_block_node* old_next = curr->next;
         new_block->prev = curr;
         new_block->next = old_next;
-        old_next->prev = new_block;
+        if (old_next) {
+          old_next->prev = new_block;
+        }
         curr->next = new_block;
         new_block->size =  old_size - sizeof(struct memory_block_node) - size;
         new_block->free = true;
@@ -88,11 +90,6 @@ void* mm_malloc(size_t size) {
 }
 
 void* mm_realloc(void* ptr, size_t size) {
-  //TODO: Implement realloc
-  //mm_malloc a block of desired size
-  //memcpy old data to block
-  //mm_free ptr
-  //get the old block
   if(size == 0) {
     mm_free(ptr);
     return NULL;
@@ -147,10 +144,10 @@ void mm_free(void* ptr) {
       //check right block
       if((curr->next != NULL) && (curr->next->free == true)) {
         curr->size += (sizeof(struct memory_block_node) + curr->next->size);
-        curr->next = curr->next->next;
         if(curr->next->next) {
           curr->next->next->prev = curr;
         }
+        curr->next = curr->next->next;
         memset(curr->allocated, 0, curr->size);
       }
     }
