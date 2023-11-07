@@ -112,9 +112,10 @@ void* mm_realloc(void* ptr, size_t size) {
   if (new_ptr == NULL) {
     return NULL;
   }
-  //if old block's size
+  //if we are allocating to a larger size
   if(curr->size < size) 
     memcpy(new_ptr, curr->allocated, curr->size);
+  //if we are allocating to a smaller size
   else
     memcpy(new_ptr, curr->allocated, size);
   //memcpy old data to block
@@ -141,7 +142,7 @@ void mm_free(void* ptr) {
           curr->next->prev = curr->prev;
         }
         curr = curr->prev;
-        memset(curr->allocated, 0, curr->size);
+        //memset(curr->allocated, 0, curr->size);
       }
       //check right block
       if((curr->next != NULL) && (curr->next->free == true)) {
@@ -150,7 +151,7 @@ void mm_free(void* ptr) {
           curr->next->next->prev = curr;
         }
         curr->next = curr->next->next;
-        memset(curr->allocated, 0, curr->size);
+        //memset(curr->allocated, 0, curr->size);
       }
     }
     curr = curr->next;
