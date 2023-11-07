@@ -106,6 +106,9 @@ void* mm_realloc(void* ptr, size_t size) {
   }
   //curr contains the block we wanna realloc
   int* new_ptr = mm_malloc(size);
+  if (new_ptr == NULL) {
+    return NULL;
+  }
   //if old block's size
   if(curr->size < size) 
     memcpy(new_ptr, curr->allocated, curr->size);
