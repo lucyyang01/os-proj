@@ -33,6 +33,27 @@ static void load_alloc_functions() {
 int main() {
   load_alloc_functions();
 
+        //   I malloc two arrays of the same size, P and Q.
+        // Then, I realloc P to be twice as large. Since P and Q should be adjacent, realloc() should move P to a new position.
+        // Finally, I malloc an array S that is the same size as P.
+        // S should occupy the memory previously used by P.
+        // Then, I try to realloc P to be too large to fit in memory.
+        // P should not be reallocated, since there is not enough memory.
+        // The existing memory containing P should not be affeted.
+        // I free all my memory.
+
+  int* p = mm_malloc(50);
+  int* q = mm_malloc(50);
+  assert(p != q);
+
+  int* rp = mm_realloc(p, 100);
+  assert(p != rp);
+
+  int* s = mm_malloc(50);
+  assert(s == p);
+  puts("simple realloc");
+
+
   // int* data = mm_malloc(sizeof(int));
   // assert(data != NULL);
   // data[0] = 0x162;
@@ -72,15 +93,15 @@ int main() {
   //       I check that ptr has been freed.
 
 
-  int* a = mm_malloc(10);
-  int* b = mm_malloc(10);
-  assert(a != b);
+  // int* a = mm_malloc(10);
+  // int* b = mm_malloc(10);
+  // assert(a != b);
 
-  mm_free(a);
-  mm_free(b);
+  // mm_free(a);
+  // mm_free(b);
 
-  int* c = mm_malloc(4);
-  assert(a == c);
-  mm_free(c);
-  puts("simple coalesce");
+  // int* c = mm_malloc(4);
+  // assert(a == c);
+  // mm_free(c);
+  // puts("simple coalesce");
 }

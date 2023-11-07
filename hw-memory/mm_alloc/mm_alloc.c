@@ -44,7 +44,6 @@ void* mm_malloc(size_t size) {
     if(curr->size >= size && curr->free == true) {
       //if the current block can hold anohter block
       if (curr->size >= 1 + size + sizeof(struct memory_block_node)) {
-        printf("i split");
         //split the current block
         //update curr
         __uint32_t old_size = curr->size;
@@ -113,20 +112,17 @@ void* mm_realloc(void* ptr, size_t size) {
   else
     memcpy(new_ptr, curr->allocated, size);
   //memcpy old data to block
-  mm_free(curr);
+  mm_free(curr->allocated);
   return new_ptr;
 }
 
 void mm_free(void* ptr) {
   // //TODO: Implement free
-  //printf("I REACHED HERE");
   if(ptr == NULL) 
     return;
   //find the block of memory ptr corresponds to 
-  //printf("I REACHED HERE");
   struct memory_block_node* curr = mem_head;
   while(curr != NULL) {
-    //printf("I REACHED HERE");
     if (curr->allocated == ptr) {
       //free the block
       curr->free = true;
