@@ -61,6 +61,22 @@ void put(buf key, buf value) {
   CLIENT *clnt = clnt_connect(HOST);
 
   /* TODO */
+  put_request ret;
+  put_request* result;
+
+  put_request args;
+  args.key = key;
+  args.value = value;
+
+  result = (put_request* ) put_1(&args, clnt);
+  if (result == (put_request *)NULL) {
+    clnt_perror(clnt, "call failed");
+    exit(1);
+  }
+
+  ret.key = result->key;
+  ret.value = result->value;
+  xdr_free((xdrproc_t)xdr_string, (char*) result);
 
   clnt_destroy(clnt);
 }
@@ -69,10 +85,19 @@ buf* get(buf key) {
   CLIENT *clnt = clnt_connect(HOST);
 
   buf* ret;
+  //buf* result;
 
   /* TODO */
+  ret = get_1(&key, clnt);
+  if (ret == (buf *)NULL) {
+    clnt_perror(clnt, "call failed");
+    exit(1);
+  }
 
   clnt_destroy(clnt);
-  
+  // ret->buf_val = strdup(result->buf_val);
+  // ret->buf_len = result->buf_len;
+  // xdr_free((xdrproc_t)xdr_string, (char*) result);
+
   return ret;
 }
