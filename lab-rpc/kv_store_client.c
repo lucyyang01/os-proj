@@ -35,11 +35,22 @@ int example(int input) {
 }
 
 char* echo(char* input) {
+ 
   CLIENT *clnt = clnt_connect(HOST);
 
   char* ret;
+  char** result;
 
   /* TODO */
+  result = echo_1(&input, clnt);
+  if (*result == (char *)NULL) {
+    clnt_perror(clnt, "call failed");
+    exit(1);
+  }
+  //duplicate string with strdup 
+  ret = strdup(*result);
+  xdr_free((xdrproc_t)xdr_string, (char*) result);
+
 
   clnt_destroy(clnt);
   
