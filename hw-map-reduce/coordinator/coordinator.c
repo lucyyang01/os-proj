@@ -116,7 +116,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   state->counter += 1;
 
   //add to queue in fcfs order
-  state->jobs = g_list_append(state->jobs, g_new(new_job, 1););
+  state->jobs = g_list_append(state->jobs, GINT_TO_POINTER(new_job->jobID));
 
   //printf("Size of job queue (submit job): %d\n", g_list_length(state->jobs));
   //add to jobinfo hashtable
@@ -174,22 +174,26 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   /* TODO */
   //pop the first job off the queue? (only remove jobs once done == true)
   if(g_list_length(state->jobs) > 0) {
-
-    job* first_job = (job*) g_list_first(state->jobs);
+    //get jobid from job queue
+    int* first_id = (int*) g_list_first(state->jobs);
+    //look up job struct from hashtable
+    job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
     result.job_id = first_job->jobID;
     printf("job id: %d\n", first_job->jobID);
     printf("output dir: %s\n", first_job->output_dir);
     result.output_dir = strdup(first_job->output_dir);
     result.app = strdup(first_job->app);
-    printf("made it in the for loop\n");
     result.args.args_len = first_job->args.args_len;
     if (first_job->args.args_val != NULL) {
       result.args.args_val = strdup(first_job->args.args_val);
+    } else {
+      result.args.args_val = "";
     }
+    printf("assigned result metadata\n");
     //Set task to a map task number between 0 and n_map-1 inclusive or a reduce task number between 0 and n_reduce-1 inclusive.
     //check map tasks > 0:
     if (first_job->n_map > 0) {
-
+      printf("assigning a map task\n");
       //assign a map task
       task* first_task = (task*) g_list_first(first_job->mapTasks);
       result.task = first_task->taskID;
