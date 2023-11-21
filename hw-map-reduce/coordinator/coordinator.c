@@ -64,6 +64,33 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   /* TODO */
 
+  //validate provided application name
+  app valid = get_app(argp->app);
+  if (valid.name == NULL)
+    return (int*) -1;
+
+  //create a job
+  job* new_job = malloc(sizeof(job));
+  new_job->jobID = state->counter;
+  new_job->app = argp->app;
+  new_job->files.files_val = argp->files.files_val;
+  new_job->files.files_len = argp->files.files_len;
+  new_job->output_dir = argp->output_dir;
+  new_job->args.args_len = argp->args.args_len;
+  new_job->args.args_val = argp->args.args_val;
+  new_job->n_reduce = argp->n_reduce;
+  new_job->done = false;
+  new_job->failed = false;
+
+  //increment counter for next job's id
+  state->counter += 1;
+
+  //add to queue in fcfs order
+  state->jobs = g_list_append(state->jobs, new_job);
+
+  //add to jobinfo hashtable
+  g_hash_table_insert(state->jobInfo, GINT_TO_POINTER(new_job->jobID), new_job);
+
   /* Do not modify the following code. */
   /* BEGIN */
   struct stat st;
@@ -82,7 +109,20 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
   printf("Received poll job request\n");
 
   /* TODO */
+  //assuming that argp is the jobid?
 
+  //get the correct job from the ht
+  job* lookup = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*argp));
+  
+  if (lookup == NULL) {
+    result.done = false;
+    result.failed = false;
+    result.invalid_job_id = true;
+  } else {
+    result.done = lookup->done;
+    result.failed = lookup->failed;
+    result.invalid_job_id = false;
+  }
   return &result;
 }
 
@@ -98,7 +138,8 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   result.args.args_len = 0;
 
   /* TODO */
-
+  
+  
   return &result;
 }
 
@@ -116,7 +157,9 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
 /* Initialize coordinator state. */
 void coordinator_init(coordinator** coord_ptr) {
   *coord_ptr = malloc(sizeof(coordinator));
-
+  (*coord_ptr)->jobInfo = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  (*coord_ptr)->counter = 0;
+  (*coord_ptr)->jobs = NULL;
   coordinator* coord = *coord_ptr;
 
   /* TODO */
