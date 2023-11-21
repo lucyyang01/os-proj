@@ -84,6 +84,8 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
   if (increment == 0)
     return t->segbreak;
   if (increment > 0) {
+    if(t->segbreak + increment >= PHYS_BASE)
+      return (void*) -1;
     if (pg_round_up(t->segbreak + increment) != pg_round_up(t->segbreak)) {
       uint32_t rounded = pg_round_up(t->segbreak + increment) - pg_round_up(t->segbreak);
       uint32_t num_pages = rounded / PGSIZE;
@@ -92,13 +94,7 @@ static uint8_t* syscall_sbrk(intptr_t increment) {
         return (void*) -1;
       for(int i = 0; i < num_pages; i++) {
         install_page(pg_round_up(t->segbreak) + (i * PGSIZE), kpages + (i * PGSIZE), true);
-        // if (!success) {
-        //   for (int j = 0; j < i + 1; j++) {
-        //      uint8_t* actual_page = pagedir_get_page(t->pagedir, pg_round_down(t->segbreak) - (j * PGSIZE));
-        //     pagedir_clear_page(t->pagedir, pg_round_down(t->segbreak) - (j * PGSIZE));
-        //     palloc_free_page(actual_page);
-        //   }
-        // }
+        //pagedir_set_page(t->pagedir, pg_round_up(t->segbreak) + (i * PGSIZE), kpages + (i * PGSIZE), true);
       }
     }
   } else {

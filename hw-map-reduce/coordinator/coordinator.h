@@ -28,8 +28,8 @@ typedef char *path;
 
 typedef struct {
   /* TODO */
-  GList* jobs;
-  GHashTable* jobInfo;
+  GList* jobs; //queue of jobs
+  GHashTable* jobInfo; //hashmap of jobs
   int counter; //global counter for unique jobids
 } coordinator;
 
@@ -37,10 +37,7 @@ typedef struct {
   int jobID;
   int n_reduce; //num tasks to reduce, decrememnt once we reduce one?
   u_int n_map; //num tasks to map == num files
-  struct {
-		u_int files_len; //num map tasks, decrement once we map one?
-		path *files_val;
-	} files;
+
   //don't mess with args?
   struct {
 		u_int args_len;
@@ -53,7 +50,7 @@ typedef struct {
   //populate these lists within submit job?
   //parse thru the path string (commas) and use that info to fill out a task struct
   GList* mapTasks;
-  GList* reduceTasks;
+  //GList* reduceTasks;
   //keep track of job status
   bool done;
   bool failed;
@@ -61,7 +58,8 @@ typedef struct {
 
 typedef struct {
   int taskID;
-  path* file;
+  char* file;
+  bool reduce;
 } task;
 
 
