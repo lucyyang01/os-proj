@@ -49,7 +49,8 @@ typedef struct {
   
   //GList* taskIDs;
   GHashTable* mapTasks; //map taskid to file path
-  int idxTracker;
+  int n_map_completed;
+  int n_reduce_completed;
   //GList* reduceTasks;
   //keep track of job status
   bool done;

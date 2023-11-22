@@ -72,21 +72,20 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   //create a job
   job* new_job = malloc(sizeof(job));
   new_job->jobID = state->counter;
-  new_job->app = argp->app;
+  new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
-  char* str = strdup(*argp->files.files_val);
-  char* token;
+  //printf("nUM TO REDUCE: %d\n", argp->n_reduce);
+  // char* str = strdup(*argp->files.files_val);
+  // char* token;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  new_job->idxTracker = 0;
-  int counter = 0;
-  //these should all be map tasks
-  while ((token = strtok(str, ",")) != NULL) {
-    g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(counter), token);
-    counter += 1; //this should populate the whole hashmap
-    str = NULL; //this was a quick fix to the while loop going infinitely?
+  new_job->n_map_completed = 0;
+  new_job->n_reduce_completed = 0;
+  for (int i = 0; i < argp->files.files_len; i++) {
+    //printf("file: %s\n", argp->files.files_val[i]);
+    char* dup = strdup(argp->files.files_val[i]);
+    g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
   }
   new_job->output_dir = strdup(argp->output_dir);
-  printf("new job output dir: %s\n", new_job->output_dir);
 
   new_job->args.args_len = argp->args.args_len;
   if(argp->args.args_val != NULL) {
@@ -106,8 +105,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   //add to jobinfo hashtable
   g_hash_table_insert(state->jobInfo, GINT_TO_POINTER(new_job->jobID), new_job);
-  printf("SUBMIT JOB idxtracker: %d\n", new_job->idxTracker);
-
+\
 
   /* Do not modify the following code. */
   /* BEGIN */
@@ -129,13 +127,25 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
   /* TODO */
   //get the correct job from the ht
   job* lookup = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*argp));
-  
+
+  //TODO: check that n_map_completed == n_map && n_reduce_completed == n_reduce
+  //if invalid jobid was passed in
   if (lookup == NULL) {
+    //printf("MADE IT HERE\n");
     result.done = false;
     result.failed = false;
     result.invalid_job_id = true;
   } else {
-    result.done = lookup->done;
+    //we're done 
+    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+      //printf("FINISHING\n");
+
+      result.done = true;
+      lookup->done = true;
+      state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
+      //printf("Job completed. \n");
+    }
+    //printf("???\n");
     result.failed = lookup->failed;
     result.invalid_job_id = false;
   }
@@ -155,10 +165,11 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
 
   /* TODO */
   if(g_list_length(state->jobs) > 0) {
-    //get jobid from job queue
+    //get the fifo job
     int* first_id = (int*) g_list_first(state->jobs);
-    //look up job struct from hashtable
     job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
+    //TODO: wait if not all map tasks complete
+    //TODO: either pop from queue or check job not marked as done
     if(first_job->done == false && first_job->failed == false) {
       result.job_id = first_job->jobID;
       result.output_dir = strdup(first_job->output_dir);
@@ -168,27 +179,26 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       if (first_job->args.args_val != NULL) {
         result.args.args_val = strdup(first_job->args.args_val);
       } else {
-        result.args.args_val = "";
+        result.args.args_val = ""; //or should it be null?
       }
       //check map tasks > 0:
-      if (first_job->n_map > 0) {
+      //we haven't completed all jobs yet
+      if (first_job->n_map_completed < first_job->n_map) {
         //assign a map task
-        char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->idxTracker));
-
-        result.task = first_job->n_map;
+        char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_completed));
+        result.task = first_job->n_map_completed;
+        //printf("task id: %d\n", first_job->n_map_completed);
         result.file = strdup(task_file);
+        //printf("MADE IT HERE\n");
         result.n_reduce = first_job->n_reduce;
-        result.n_map = first_job->n_map - 1;
+        result.n_map = first_job->n_map;
         result.reduce = false;
         result.wait = false;
-        first_job->n_map -= 1;
-        first_job->idxTracker += 1; //increment idx tracker every time we lookup a map task
         g_hash_table_steal(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map));
       } else  {
-        if (first_job->n_reduce > 0 && first_job->n_map == 0) {
+        if (first_job->n_reduce_completed < first_job->n_reduce) {
           //assing a reduce task
-          first_job->n_reduce -= 1;
-          result.task = first_job->n_reduce;
+          result.task = first_job->n_reduce_completed;
           result.reduce = true;
           result.wait = false;
         }
@@ -210,14 +220,17 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   //submitted once a task is finished
   //pop the leading job off the queue
   job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(argp->job_id));
+  //if the job failed, set the failed field
   if(argp->success == false) {
     curr_job->failed = true;
     return (void*)&result;
   }
-  if( curr_job->n_map == 0 && curr_job->n_reduce == 0) {
-    curr_job->done = true;
+  if (argp->reduce != true) {
+    curr_job->n_map_completed += 1;
+  } else {
+    curr_job->n_reduce_completed += 1;
   }
-
+  //TODO: update n_map_completed, n_reduce_completedc
   return (void*)&result;
 }
 
