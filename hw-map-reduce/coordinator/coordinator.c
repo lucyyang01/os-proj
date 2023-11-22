@@ -139,13 +139,11 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     //we're done 
     if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
       //printf("FINISHING\n");
-
       result.done = true;
       lookup->done = true;
-      state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
-      //printf("Job completed. \n");
+    } else {
+      result.done = false;
     }
-    //printf("???\n");
     result.failed = lookup->failed;
     result.invalid_job_id = false;
   }
@@ -168,8 +166,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     //get the fifo job
     int* first_id = (int*) g_list_first(state->jobs);
     job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
-    //TODO: wait if not all map tasks complete
-    //TODO: either pop from queue or check job not marked as done
     if(first_job->done == false && first_job->failed == false) {
       result.job_id = first_job->jobID;
       result.output_dir = strdup(first_job->output_dir);
@@ -181,10 +177,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       } else {
         result.args.args_val = ""; //or should it be null?
       }
-      //check map tasks > 0:
-      //we haven't completed all jobs yet
       if (first_job->n_map_completed < first_job->n_map) {
-        //assign a map task
         char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_completed));
         result.task = first_job->n_map_completed;
         //printf("task id: %d\n", first_job->n_map_completed);
@@ -195,16 +188,17 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.reduce = false;
         result.wait = false;
         g_hash_table_steal(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map));
-      } else  {
+      } else {
         if (first_job->n_reduce_completed < first_job->n_reduce) {
-          //assing a reduce task
           result.task = first_job->n_reduce_completed;
+          result.n_reduce = first_job->n_reduce;
+          result.n_map = first_job->n_map;
           result.reduce = true;
           result.wait = false;
         }
       }
     }
-    }
+  }
   //if no map and no reduce tasks left, assign wait to false
   
   return &result;
@@ -217,8 +211,6 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   printf("Received finish task request\n");
 
   /* TODO */
-  //submitted once a task is finished
-  //pop the leading job off the queue
   job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(argp->job_id));
   //if the job failed, set the failed field
   if(argp->success == false) {
