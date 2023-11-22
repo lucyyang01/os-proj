@@ -52,6 +52,7 @@ typedef struct {
   int n_map_completed;
   int n_map_assigned;
   int n_reduce_completed;
+  int n_reduce_assigned;
   bool done;
   bool failed;
 } job;

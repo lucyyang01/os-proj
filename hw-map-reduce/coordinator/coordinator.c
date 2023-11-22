@@ -77,6 +77,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->n_map_completed = 0;
   new_job->n_map_assigned = 0;
   new_job->n_reduce_completed = 0;
+  new_job->n_reduce_assigned = 0;
   for (int i = 0; i < argp->files.files_len; i++) {
     char* dup = strdup(argp->files.files_val[i]);
     g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
@@ -169,8 +170,9 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.wait = false;
         first_job->n_map_assigned += 1;
      } else {
-        if (first_job->n_reduce_completed < first_job->n_reduce) {
-          result.task = first_job->n_reduce_completed;
+        if (first_job->n_reduce_assigned < first_job->n_reduce) {
+          result.task = first_job->n_reduce_assigned;
+          first_job->n_reduce_assigned += 1;
           result.reduce = true;
           if (first_job->n_map_completed < first_job->n_map) {
             result.wait = true;
