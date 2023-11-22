@@ -170,7 +170,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       result.job_id = first_job->jobID;
       result.output_dir = strdup(first_job->output_dir);
       result.app = strdup(first_job->app);
-
       result.args.args_len = first_job->args.args_len;
       if (first_job->args.args_val != NULL) {
         result.args.args_val = strdup(first_job->args.args_val);
@@ -195,12 +194,26 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
           result.n_map = first_job->n_map;
           result.reduce = true;
           result.wait = false;
+        } else {
+          result.job_id = 0;
+          result.task = 0;
+          result.n_map = 0;
+          result.n_reduce = 0;
+          result.reduce = false;
+          result.args.args_val = "";
         }
       }
     }
+  } else {
+    result.job_id = 0;
+    result.task = 0;
+    result.n_map = 0;
+    result.n_reduce = 0;
+    result.reduce = false;
+    result.args.args_val = "";
   }
   //if no map and no reduce tasks left, assign wait to false
-  
+
   return &result;
 }
 
