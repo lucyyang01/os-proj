@@ -78,6 +78,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->n_map_assigned = 0;
   new_job->n_reduce_completed = 0;
   for (int i = 0; i < argp->files.files_len; i++) {
+    //printf("file: %s\n", argp->files.files_val[i]);
     char* dup = strdup(argp->files.files_val[i]);
     g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
   }
@@ -165,30 +166,32 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_assigned));
         result.task = first_job->n_map_assigned;
         result.file = strdup(task_file);
+        result.n_reduce = first_job->n_reduce;
+        result.n_map = first_job->n_map;
         result.reduce = false;
         result.wait = false;
         first_job->n_map_assigned += 1;
      } else {
-        if (first_job->n_reduce_completed < first_job->n_reduce) {
-          result.task = first_job->n_reduce_completed;
-          result.reduce = true;
-          if (first_job->n_map_completed < first_job->n_map) {
-            result.wait = true;
-          } else {
-            result.wait = false;
-          }
+      if (first_job->n_reduce_completed < first_job->n_reduce) {
+        result.task = first_job->n_reduce_completed;
+        result.n_reduce = first_job->n_reduce;
+        result.n_map = first_job->n_map;
+        result.reduce = true;
+        if (first_job->n_map_completed < first_job->n_map) {
+          result.wait = true;
+        } else {
+          result.wait = false;
         }
       }
-      result.job_id = first_job->jobID;
+     }
+     result.job_id = first_job->jobID;
       result.output_dir = strdup(first_job->output_dir);
       result.app = strdup(first_job->app);
       result.args.args_len = first_job->args.args_len;
-      result.n_reduce = first_job->n_reduce;
-      result.n_map = first_job->n_map;
       if (first_job->args.args_val != NULL) {
         result.args.args_val = strdup(first_job->args.args_val);
       } else {
-        result.args.args_val = ""; //or should it be null?
+          result.args.args_val = ""; //or should it be null?
       }
     }
   }
