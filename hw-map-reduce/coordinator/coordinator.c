@@ -63,7 +63,6 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   printf("Received submit job request\n");
 
   /* TODO */
-
   //validate provided application name
   app valid = get_app(argp->app);
   if (valid.name == NULL)
@@ -74,9 +73,6 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->jobID = state->counter;
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
-  //printf("nUM TO REDUCE: %d\n", argp->n_reduce);
-  // char* str = strdup(*argp->files.files_val);
-  // char* token;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
   new_job->n_map_completed = 0;
   new_job->n_reduce_completed = 0;
@@ -137,10 +133,11 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     result.invalid_job_id = true;
   } else {
     //we're done 
-    if(lookup->done == false && lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
       //printf("FINISHING\n");
       result.done = true;
       lookup->done = true;
+      state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
     } else {
       result.done = false;
     }
