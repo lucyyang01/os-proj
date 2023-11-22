@@ -10,6 +10,7 @@
 
 /* Global coordinator state. */
 coordinator* state;
+int counter = 0;
 
 extern void coordinator_1(struct svc_req*, SVCXPRT*);
 
@@ -70,7 +71,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   //create a job
   job* new_job = malloc(sizeof(job));
-  new_job->jobID = state->counter;
+  new_job->jobID = counter;
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
@@ -95,7 +96,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->failed = false;
 
   //increment counter for next job's id
-  state->counter += 1;
+  counter += 1;
 
   //add to queue in fcfs order
   state->jobs = g_list_append(state->jobs, GINT_TO_POINTER(new_job->jobID));
