@@ -193,8 +193,8 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
           result.args.args_val = ""; //or should it be null?
         }
       }
-    return &result;
   }
+  return &result;
 }
 
 /* FINISH_TASK RPC implementation. */
