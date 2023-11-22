@@ -137,7 +137,7 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     result.invalid_job_id = true;
   } else {
     //we're done 
-    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+    if(lookup->done == false && lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
       //printf("FINISHING\n");
       result.done = true;
       lookup->done = true;
@@ -166,7 +166,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     //get the fifo job
     int* first_id = (int*) g_list_first(state->jobs);
     job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
-    if(first_job->done == false && first_job->failed == false) {
+    if(first_job != NULL && first_job->done == false && first_job->failed == false) { 
       result.job_id = first_job->jobID;
       result.output_dir = strdup(first_job->output_dir);
       result.app = strdup(first_job->app);
@@ -203,6 +203,13 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
           result.args.args_val = "";
         }
       }
+    } else {
+      result.job_id = 0;
+      result.task = 0;
+      result.n_map = 0;
+      result.n_reduce = 0;
+      result.reduce = false;
+      result.args.args_val = "";
     }
   } else {
     result.job_id = 0;
