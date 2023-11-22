@@ -37,7 +37,7 @@ typedef struct {
   int jobID;
   int n_reduce; //num tasks to reduce, decrememnt once we reduce one?
   u_int n_map; //num tasks to map == num files
-
+  path *files_val;
   //don't mess with args?
   struct {
 		u_int args_len;
@@ -48,7 +48,6 @@ typedef struct {
   path output_dir;
   
   //GList* taskIDs;
-  GHashTable* mapTasks; //map taskid to file path
   int n_map_completed;
   int n_map_assigned;
   int n_reduce_completed;
