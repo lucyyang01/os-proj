@@ -101,8 +101,6 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   //add to jobinfo hashtable
   g_hash_table_insert(state->jobInfo, GINT_TO_POINTER(new_job->jobID), new_job);
-\
-
   /* Do not modify the following code. */
   /* BEGIN */
   struct stat st;
@@ -230,6 +228,9 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   /* TODO */
   job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(argp->job_id));
   //if the job failed, set the failed field
+  if (curr_job == NULL) {
+    return (void*)&result;
+  }
   if(argp->success == false) {
     curr_job->failed = true;
     return (void*)&result;
