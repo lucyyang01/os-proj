@@ -74,15 +74,15 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->jobID = counter;
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
-  new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  //new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
   new_job->n_map_completed = 0;
   new_job->n_map_assigned = 0;
   new_job->n_reduce_completed = 0;
-  new_job->n_reduce_assigned = 0;
-  for (int i = 0; i < argp->files.files_len; i++) {
-    char* dup = strdup(argp->files.files_val[i]);
-    g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
-  }
+  // for (int i = 0; i < argp->files.files_len; i++) {
+  //   char* dup = strdup(argp->files.files_val[i]);
+  //   g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
+  // }
+  *new_job->files_val = strdup(*argp->files.files_val);
   new_job->output_dir = strdup(argp->output_dir);
 
   new_job->args.args_len = argp->args.args_len;
@@ -164,20 +164,20 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
     if(first_job != NULL && first_job->done == false && first_job->failed == false) { 
       if (first_job->n_map_assigned < first_job->n_map) {
-        char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_assigned));
+        char* task_file = first_job->files_val[first_job->n_map_assigned];
         result.task = first_job->n_map_assigned;
         result.file = strdup(task_file);
         result.reduce = false;
         result.wait = false;
         first_job->n_map_assigned += 1;
      } else {
-        if (first_job->n_reduce_assigned < first_job->n_reduce) {
-          result.task = first_job->n_reduce_assigned;
-          first_job->n_reduce_assigned += 1;
-          result.reduce = true;
+        if (first_job->n_reduce_completed < first_job->n_reduce) 
           if (first_job->n_map_completed < first_job->n_map) {
             result.wait = true;
+            return &result;
           } else {
+            result.task = first_job->n_reduce_completed;
+            result.reduce = true;
             result.wait = false;
           }
         }
@@ -194,9 +194,8 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_val = ""; //or should it be null?
       }
     }
-  }
   return &result;
-}
+  }
 
 /* FINISH_TASK RPC implementation. */
 void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
