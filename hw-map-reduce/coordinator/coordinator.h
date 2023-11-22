@@ -46,10 +46,10 @@ typedef struct {
 
 	char *app;
   path output_dir;
-  //maintain a list of tasks within jobs
-  //populate these lists within submit job?
-  //parse thru the path string (commas) and use that info to fill out a task struct
-  GList* mapTasks;
+  
+  //GList* taskIDs;
+  GHashTable* mapTasks; //map taskid to file path
+  int idxTracker;
   //GList* reduceTasks;
   //keep track of job status
   bool done;
