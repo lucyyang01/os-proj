@@ -125,14 +125,15 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
 
   //TODO: check that n_map_completed == n_map && n_reduce_completed == n_reduce
   //if invalid jobid was passed in
-  if (lookup == NULL) {
+  if (lookup == NULL || lookup->done == true) {
     //printf("MADE IT HERE\n");
     result.done = false;
     result.failed = false;
     result.invalid_job_id = true;
+    //we found lookup
   } else {
     //we're done 
-    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce &&lookup->done == false && lookup->failed == false) {
       //printf("FINISHING\n");
       result.done = true;
       lookup->done = true;
