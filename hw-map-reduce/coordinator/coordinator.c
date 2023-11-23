@@ -133,11 +133,11 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     //we found lookup
   } else {
     //we're done 
-    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce && lookup->done == false) {
       //printf("FINISHING\n");
       result.done = true;
       lookup->done = true;
-      //state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
+      state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
     } else {
       result.done = false;
     }
@@ -163,9 +163,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     int* curr_job_id = (int*) g_list_nth(state->jobs, i);
     job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*curr_job_id));
     if (curr_job->done == false && curr_job->failed == false) {
-      //result.args.args_val = strdup(curr_job->args.args_val);
-      //if there's still map tasks to be assigned
-
       if (curr_job->n_map_assigned < curr_job->n_map) {
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
         result.task = curr_job->n_map_assigned;
@@ -179,11 +176,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_len = curr_job->args.args_len;
         result.n_reduce = curr_job->n_reduce;
         result.n_map = curr_job->n_map;
-        // if (curr_job->args.args_val != NULL) {
-        //   result.args.args_val = strdup(curr_job->args.args_val);
-        // } else {
-        //   result.args.args_val = ""; //or should it be null?
-        // }
         result.args.args_val = strdup(curr_job->args.args_val);
         return &result;
       }
@@ -198,11 +190,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
           result.args.args_len = curr_job->args.args_len;
           result.n_reduce = curr_job->n_reduce;
           result.n_map = curr_job->n_map;
-          // if (curr_job->args.args_val != NULL) {
-          //   result.args.args_val = strdup(curr_job->args.args_val);
-          // } else {
-          //   result.args.args_val = NULL; //or should it be null?
-          // }
           //output dir could be corrupted
           //the counters are getting reset
           //check behavior for tasks that are finished, but stay in the job queue
