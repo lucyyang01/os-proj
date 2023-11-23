@@ -133,14 +133,21 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     //we found lookup
   } else {
     //we're done 
-    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+    if(lookup->done == true) {
       //printf("FINISHING\n");
       result.done = true;
-      lookup->done = true;
       //state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
     } else {
       result.done = false;
     }
+    // if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
+    //   //printf("FINISHING\n");
+    //   result.done = true;
+    //   lookup->done = true;
+    //   //state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
+    // } else {
+    //   result.done = false;
+    // }
     result.failed = lookup->failed;
     result.invalid_job_id = false;
   }
@@ -236,6 +243,9 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
     curr_job->n_map_completed += 1;
   } else {
     curr_job->n_reduce_completed += 1;
+  }
+  if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed == curr_job->n_reduce) {
+    curr_job->done = true;
   }
   return (void*)&result;
 }
