@@ -73,17 +73,13 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->jobID = state->counter;
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
-  new_job->n_reduce = argp->n_reduce;
-  //new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  new_job->n_reduce_assigned = 0;
+  new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
   new_job->n_map_completed = 0;
   new_job->n_map_assigned = 0;
   new_job->n_reduce_completed = 0;
-  new_job->files_arr = malloc(sizeof(*argp->files.files_val[0] * argp->files.files_len));
   for (int i = 0; i < argp->files.files_len; i++) {
-    new_job->files_arr[i] = strdup(argp->files.files_val[i]);
-    printf("ARGP VAL: %s\n", argp->files.files_val[i]);
-    printf("JOB VAL: %s\n", new_job->files_arr[i]);
+    char* dup = strdup(argp->files.files_val[i]);
+    g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
   }
   new_job->output_dir = strdup(argp->output_dir);
 
@@ -93,6 +89,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   } else {
     new_job->args.args_val = NULL;
   }
+  new_job->n_reduce = argp->n_reduce;
   new_job->done = false;
   new_job->failed = false;
 
@@ -165,36 +162,33 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
     if(first_job != NULL && first_job->done == false && first_job->failed == false) { 
       if (first_job->n_map_assigned < first_job->n_map) {
-        //char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_assigned));
-        char* task_file = first_job->files_arr[first_job->n_map_assigned];
+        char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_assigned));
         result.task = first_job->n_map_assigned;
         result.file = strdup(task_file);
-        result.n_reduce = first_job->n_reduce;
-        result.n_map = first_job->n_map;
         result.reduce = false;
         result.wait = false;
         first_job->n_map_assigned += 1;
      } else {
-      if (first_job->n_reduce_completed < first_job->n_reduce) {
-        result.task = first_job->n_reduce_completed;
-        result.n_reduce = first_job->n_reduce;
-        result.n_map = first_job->n_map;
-        result.reduce = true;
-        if (first_job->n_map_completed < first_job->n_map) {
-          result.wait = true;
-        } else {
-          result.wait = false;
+        if (first_job->n_reduce_completed < first_job->n_reduce) {
+          result.task = first_job->n_reduce_completed;
+          result.reduce = true;
+          if (first_job->n_map_completed < first_job->n_map) {
+            result.wait = true;
+          } else {
+            result.wait = false;
+          }
         }
       }
-     }
-     result.job_id = first_job->jobID;
+      result.job_id = first_job->jobID;
       result.output_dir = strdup(first_job->output_dir);
       result.app = strdup(first_job->app);
       result.args.args_len = first_job->args.args_len;
+      result.n_reduce = first_job->n_reduce;
+      result.n_map = first_job->n_map;
       if (first_job->args.args_val != NULL) {
         result.args.args_val = strdup(first_job->args.args_val);
       } else {
-          result.args.args_val = ""; //or should it be null?
+        result.args.args_val = ""; //or should it be null?
       }
     }
   }

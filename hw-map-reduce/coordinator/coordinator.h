@@ -46,14 +46,12 @@ typedef struct {
 
 	char *app;
   path output_dir;
-  path * files_arr;
   
   //GList* taskIDs;
- // GHashTable* mapTasks; //map taskid to file path
+  GHashTable* mapTasks; //map taskid to file path
   int n_map_completed;
   int n_map_assigned;
   int n_reduce_completed;
-  int n_reduce_assigned;
   bool done;
   bool failed;
 } job;
