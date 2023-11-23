@@ -136,7 +136,7 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
       //printf("FINISHING\n");
       result.done = true;
       lookup->done = true;
-      state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
+      //state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
     } else {
       result.done = false;
     }
