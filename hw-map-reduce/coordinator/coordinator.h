@@ -39,10 +39,8 @@ typedef struct {
   u_int n_map; //num tasks to map == num files
 
   //don't mess with args?
-  struct {
-		u_int args_len;
-		char *args_val;
-	} args;
+	u_int args_len;
+	char *args_val;
 
 	char *app;
   path output_dir;

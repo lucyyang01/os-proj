@@ -10,6 +10,7 @@
 
 /* Global coordinator state. */
 coordinator* state;
+int counter;
 
 extern void coordinator_1(struct svc_req*, SVCXPRT*);
 
@@ -40,6 +41,7 @@ int main(int argc, char** argv) {
   }
 
   coordinator_init(&state);
+  counter = 0;
 
   svc_run();
   fprintf(stderr, "%s", "svc_run returned");
@@ -70,7 +72,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   //create a job
   job* new_job = malloc(sizeof(job));
-  new_job->jobID = state->counter;
+  new_job->jobID = counter;
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
@@ -83,19 +85,18 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
     g_hash_table_insert(new_job->mapTasks, GINT_TO_POINTER(i), dup);
   }
   new_job->output_dir = strdup(argp->output_dir);
-
-  new_job->args.args_len = argp->args.args_len;
+  new_job->args_len = argp->args.args_len;
   if(argp->args.args_val != NULL) {
-    new_job->args.args_val = strdup(argp->args.args_val);
+    new_job->args_val = strdup(argp->args.args_val);
   } else {
-    new_job->args.args_val = "";
+    new_job->args_val = "";
   }
   new_job->n_reduce = argp->n_reduce;
   new_job->done = false;
   new_job->failed = false;
 
   //increment counter for next job's id
-  state->counter += 1;
+  counter += 1;
 
   //add to queue in fcfs order
   state->jobs = g_list_append(state->jobs, GINT_TO_POINTER(new_job->jobID));
@@ -185,10 +186,10 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.job_id = curr_job->jobID;
         result.output_dir = strdup(curr_job->output_dir);
         result.app = strdup(curr_job->app);
-        result.args.args_len = curr_job->args.args_len;
+        result.args.args_len = curr_job->args_len;
         result.n_reduce = curr_job->n_reduce;
         result.n_map = curr_job->n_map;
-        result.args.args_val = strdup(curr_job->args.args_val);
+        result.args.args_val = strdup(curr_job->args_val);
         return &result;
       }
       //if all map tasks are completed, but not all reduce tasks are done
@@ -197,10 +198,10 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.job_id = curr_job->jobID;
         result.output_dir = strdup(curr_job->output_dir);
         result.app = strdup(curr_job->app);
-        result.args.args_len = curr_job->args.args_len;
+        result.args.args_len = curr_job->args_len;
         result.n_reduce = curr_job->n_reduce;
         result.n_map = curr_job->n_map;
-        result.args.args_val = strdup(curr_job->args.args_val);
+        result.args.args_val = strdup(curr_job->args_val);
         result.task = curr_job->n_reduce_assigned;
         curr_job->n_reduce_assigned += 1;
         result.wait = false;
