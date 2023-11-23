@@ -161,41 +161,44 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   for(int i = 0; i < g_list_length(state->jobs); i++) {
     int* curr_job_id = (int*) g_list_nth(state->jobs, i);
     job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*curr_job_id));
-    result.job_id = curr_job->jobID;
-    result.output_dir = strdup(curr_job->output_dir);
-    result.app = strdup(curr_job->app);
-    result.args.args_len = curr_job->args.args_len;
-    result.n_reduce = curr_job->n_reduce;
-    result.n_map = curr_job->n_map;
-    if (curr_job->args.args_val != NULL) {
-      result.args.args_val = strdup(curr_job->args.args_val);
-    } else {
-      result.args.args_val = ""; //or should it be null?
-    }
-    //if there's still map tasks to be assigned
-    if (curr_job->n_map_assigned < curr_job->n_map) {
-      char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
-      result.task = curr_job->n_map_assigned;
-      result.file = strdup(task_file);
-      result.reduce = false;
-      result.wait = false;
-      curr_job->n_map_assigned += 1;
-      return &result;
-    }
-    //if all map tasks are completed, but not all reduce tasks are done
-    if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed < curr_job->n_reduce) {
-      //are there any more reduce tasks to assign?
-      if(curr_job->n_reduce_assigned < curr_job->n_reduce) {
-        //assign the reduce task
-        result.task = curr_job->n_reduce_assigned;
-        curr_job->n_reduce_assigned += 1;
-        result.wait = false;
-        result.reduce = true;
-        return &result;
-      //all map tasks completed, not all reduce tasks complete, no reduce tasks to assign
+    if (curr_job->done == false && curr_job->failed == false) {
+      result.job_id = curr_job->jobID;
+      result.output_dir = strdup(curr_job->output_dir);
+      result.app = strdup(curr_job->app);
+      result.args.args_len = curr_job->args.args_len;
+      result.n_reduce = curr_job->n_reduce;
+      result.n_map = curr_job->n_map;
+      if (curr_job->args.args_val != NULL) {
+        result.args.args_val = strdup(curr_job->args.args_val);
       } else {
-        continue;
+        result.args.args_val = ""; //or should it be null?
       }
+      //if there's still map tasks to be assigned
+      if (curr_job->n_map_assigned < curr_job->n_map) {
+        char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
+        result.task = curr_job->n_map_assigned;
+        result.file = strdup(task_file);
+        result.reduce = false;
+        result.wait = false;
+        curr_job->n_map_assigned += 1;
+        return &result;
+      }
+      //if all map tasks are completed, but not all reduce tasks are done
+      if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed < curr_job->n_reduce) {
+        //are there any more reduce tasks to assign?
+        if(curr_job->n_reduce_assigned < curr_job->n_reduce) {
+          //assign the reduce task
+          result.task = curr_job->n_reduce_assigned;
+          curr_job->n_reduce_assigned += 1;
+          result.wait = false;
+          result.reduce = true;
+          return &result;
+        } else {
+          continue;
+        }
+      }
+    } else {
+      continue;
     }
   }
   return &result;
