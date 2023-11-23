@@ -125,7 +125,7 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
 
   //TODO: check that n_map_completed == n_map && n_reduce_completed == n_reduce
   //if invalid jobid was passed in
-  if (lookup == NULL || lookup->done == true) {
+  if (lookup == NULL) {
     //printf("MADE IT HERE\n");
     result.done = false;
     result.failed = false;
@@ -133,7 +133,7 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     //we found lookup
   } else {
     //we're done 
-    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce &&lookup->done == false && lookup->failed == false) {
+    if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
       //printf("FINISHING\n");
       result.done = true;
       lookup->done = true;
@@ -172,8 +172,9 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       if (curr_job->args.args_val != NULL) {
         result.args.args_val = strdup(curr_job->args.args_val);
       } else {
-        result.args.args_val = ""; //or should it be null?
+        result.args.args_val = NULL; //or should it be null?
       }
+      //result.args.args_val = strdup(curr_job->args.args_val);
       //if there's still map tasks to be assigned
       if (curr_job->n_map_assigned < curr_job->n_map) {
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
