@@ -158,50 +158,45 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   result.args.args_len = 0;
 
   /* TODO */
-  if (g_list_length(state->jobs) > 0) {
-    int* first_id = (int*) g_list_first(state->jobs);
-    job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
-    //there are map tasks left to be assigned
-    result.job_id = first_job->jobID;
-    result.output_dir = strdup(first_job->output_dir);
-    result.app = strdup(first_job->app);
-    result.args.args_len = first_job->args.args_len;
-    result.n_reduce = first_job->n_reduce;
-    result.n_map = first_job->n_map;
-    if (first_job->args.args_val != NULL) {
-      result.args.args_val = strdup(first_job->args.args_val);
+  for(int i = 0; i < g_list_length(state->jobs); i++) {
+    int* curr_job_id = (int*) g_list_nth(state->jobs, i);
+    job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*curr_job_id));
+    result.job_id = curr_job->jobID;
+    result.output_dir = strdup(curr_job->output_dir);
+    result.app = strdup(curr_job->app);
+    result.args.args_len = curr_job->args.args_len;
+    result.n_reduce = curr_job->n_reduce;
+    result.n_map = curr_job->n_map;
+    if (curr_job->args.args_val != NULL) {
+      result.args.args_val = strdup(curr_job->args.args_val);
     } else {
       result.args.args_val = ""; //or should it be null?
     }
     //if there's still map tasks to be assigned
-    if (first_job->n_map_assigned < first_job->n_map) {
-      char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_assigned));
-      result.task = first_job->n_map_assigned;
+    if (curr_job->n_map_assigned < curr_job->n_map) {
+      char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
+      result.task = curr_job->n_map_assigned;
       result.file = strdup(task_file);
       result.reduce = false;
       result.wait = false;
-      first_job->n_map_assigned += 1;
+      curr_job->n_map_assigned += 1;
       return &result;
     }
     //if all map tasks are completed, but not all reduce tasks are done
-    if(first_job->n_map_completed == first_job->n_map && first_job->n_reduce_completed < first_job->n_reduce) {
+    if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed < curr_job->n_reduce) {
       //are there any more reduce tasks to assign?
-      if(first_job->n_reduce_assigned < first_job->n_reduce) {
+      if(curr_job->n_reduce_assigned < curr_job->n_reduce) {
         //assign the reduce task
-        result.task = first_job->n_reduce_assigned;
-        first_job->n_reduce_assigned += 1;
+        result.task = curr_job->n_reduce_assigned;
+        curr_job->n_reduce_assigned += 1;
         result.wait = false;
         result.reduce = true;
         return &result;
-      //all reduce tasks assigned, but not all of them have completed
+      //all map tasks completed, not all reduce tasks complete, no reduce tasks to assign
       } else {
-        //if there's another job on the queue, get it and assign a map
-        result.wait = true;
-        return &result;
+        continue;
       }
     }
-    //if all map and reduce tasks are assigned, look for another job
-    //if(first_job->n_map_assigned == first_job->n_map )
   }
   return &result;
 }
