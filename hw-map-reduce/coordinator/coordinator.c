@@ -203,6 +203,9 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
           // } else {
           //   result.args.args_val = NULL; //or should it be null?
           // }
+          //output dir could be corrupted
+          //the counters are getting reset
+          //check behavior for tasks that are finished, but stay in the job queue
           result.args.args_val = strdup(curr_job->args.args_val);
           result.task = curr_job->n_reduce_assigned;
           curr_job->n_reduce_assigned += 1;
