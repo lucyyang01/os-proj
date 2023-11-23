@@ -195,10 +195,13 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         return &result;
       //all reduce tasks assigned, but not all of them have completed
       } else {
+        //if there's another job on the queue, get it and assign a map
         result.wait = true;
         return &result;
       }
     }
+    //if all map and reduce tasks are assigned, look for another job
+    //if(first_job->n_map_assigned == first_job->n_map )
   }
   return &result;
 }
