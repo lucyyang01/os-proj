@@ -202,6 +202,8 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         } else {
           continue;
         }
+      }else {
+        continue;
       }
     } else {
       continue;
