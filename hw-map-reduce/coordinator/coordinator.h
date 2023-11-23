@@ -57,12 +57,6 @@ typedef struct {
   bool failed;
 } job;
 
-typedef struct {
-  int taskID;
-  char* file;
-  bool reduce;
-} task;
-
 
 
 void coordinator_init(coordinator** coord_ptr);
