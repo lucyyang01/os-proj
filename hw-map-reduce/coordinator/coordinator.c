@@ -10,6 +10,7 @@
 
 /* Global coordinator state. */
 coordinator* state;
+int counter;
 
 extern void coordinator_1(struct svc_req*, SVCXPRT*);
 
@@ -40,6 +41,7 @@ int main(int argc, char** argv) {
   }
 
   coordinator_init(&state);
+  counter = 0;
 
   svc_run();
   fprintf(stderr, "%s", "svc_run returned");
@@ -70,7 +72,8 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   //create a job
   job* new_job = malloc(sizeof(job));
-  new_job->jobID = state->counter;
+  new_job->jobID = counter;
+  printf("MY JOB ID IS==========: %d\n", new_job->jobID);
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
@@ -88,14 +91,14 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   if(argp->args.args_val != NULL) {
     new_job->args.args_val = strdup(argp->args.args_val);
   } else {
-    new_job->args.args_val = "";
+    new_job->args.args_val = NULL;
   }
   new_job->n_reduce = argp->n_reduce;
   new_job->done = false;
   new_job->failed = false;
 
   //increment counter for next job's id
-  state->counter += 1;
+  counter += 1;
 
   //add to queue in fcfs order
   state->jobs = g_list_append(state->jobs, GINT_TO_POINTER(new_job->jobID));
@@ -117,11 +120,12 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
   static poll_job_reply result;
 
-  printf("Received poll job request\n");
+  printf("Received poll job request") ;
 
   /* TODO */
   //get the correct job from the ht
-  job* lookup = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*argp));
+
+  job* lookup = g_hash_table_lookup(state->jobInfo, argp);
 
   //TODO: check that n_map_completed == n_map && n_reduce_completed == n_reduce
   //if invalid jobid was passed in
@@ -136,18 +140,11 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     if(lookup->done == true) {
       //printf("FINISHING\n");
       result.done = true;
+      //printf("I FINISHED JOB==========: %d\n", lookup->jobID);
       //state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
     } else {
       result.done = false;
     }
-    // if(lookup->n_map_completed == lookup->n_map && lookup->n_reduce_completed == lookup->n_reduce) {
-    //   //printf("FINISHING\n");
-    //   result.done = true;
-    //   lookup->done = true;
-    //   //state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
-    // } else {
-    //   result.done = false;
-    // }
     result.failed = lookup->failed;
     result.invalid_job_id = false;
   }
@@ -169,13 +166,8 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   for(int i = 0; i < g_list_length(state->jobs); i++) {
     int* curr_job_id = (int*) g_list_nth(state->jobs, i);
     job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*curr_job_id));
-    printf("n_map_completed: %d\n", curr_job->n_map_completed);
-    printf("n_reduce_completed: %d\n", curr_job->n_reduce_completed);
-    printf("n_map, %d\n", curr_job->n_map);
-    printf("n_reduce, %d\n", curr_job->n_reduce);
     if (curr_job->done == false) {
       if (curr_job->n_map_assigned < curr_job->n_map && curr_job->n_map_completed < curr_job->n_map) {
-        printf("n_map_assigned: %d\n", curr_job->n_map_assigned);
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
         result.task = curr_job->n_map_assigned;
         result.file = strdup(task_file);
@@ -188,7 +180,11 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_len = curr_job->args.args_len;
         result.n_reduce = curr_job->n_reduce;
         result.n_map = curr_job->n_map;
-        result.args.args_val = strdup(curr_job->args.args_val);
+        if(curr_job->args.args_val == NULL) {
+          result.args.args_val = NULL;
+        } else {
+          result.args.args_val = strdup(curr_job->args.args_val);
+        }
         return &result;
       }
       //if all map tasks are completed, but not all reduce tasks are done
@@ -200,7 +196,11 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_len = curr_job->args.args_len;
         result.n_reduce = curr_job->n_reduce;
         result.n_map = curr_job->n_map;
-        result.args.args_val = strdup(curr_job->args.args_val);
+        if(curr_job->args.args_val == NULL) {
+          result.args.args_val = NULL;
+        } else {
+          result.args.args_val = strdup(curr_job->args.args_val);
+        }
         result.task = curr_job->n_reduce_assigned;
         curr_job->n_reduce_assigned += 1;
         result.wait = false;
@@ -244,9 +244,9 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   } else {
     curr_job->n_reduce_completed += 1;
   }
-  if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed == curr_job->n_reduce) {
-    curr_job->done = true;
-  }
+  // if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed == curr_job->n_reduce) {
+  //   curr_job->done = true;
+  // }
   return (void*)&result;
 }
 
