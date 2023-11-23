@@ -88,7 +88,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   if(argp->args.args_val != NULL) {
     new_job->args.args_val = strdup(argp->args.args_val);
   } else {
-    new_job->args.args_val = NULL;
+    new_job->args.args_val = "";
   }
   new_job->n_reduce = argp->n_reduce;
   new_job->done = false;
@@ -179,11 +179,12 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_len = curr_job->args.args_len;
         result.n_reduce = curr_job->n_reduce;
         result.n_map = curr_job->n_map;
-        if (curr_job->args.args_val != NULL) {
-          result.args.args_val = strdup(curr_job->args.args_val);
-        } else {
-          result.args.args_val = NULL; //or should it be null?
-        }
+        // if (curr_job->args.args_val != NULL) {
+        //   result.args.args_val = strdup(curr_job->args.args_val);
+        // } else {
+        //   result.args.args_val = ""; //or should it be null?
+        // }
+        result.args.args_val = strdup(curr_job->args.args_val);
         return &result;
       }
       //if all map tasks are completed, but not all reduce tasks are done
@@ -197,11 +198,12 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
           result.args.args_len = curr_job->args.args_len;
           result.n_reduce = curr_job->n_reduce;
           result.n_map = curr_job->n_map;
-          if (curr_job->args.args_val != NULL) {
-            result.args.args_val = strdup(curr_job->args.args_val);
-          } else {
-            result.args.args_val = NULL; //or should it be null?
-          }
+          // if (curr_job->args.args_val != NULL) {
+          //   result.args.args_val = strdup(curr_job->args.args_val);
+          // } else {
+          //   result.args.args_val = NULL; //or should it be null?
+          // }
+          result.args.args_val = strdup(curr_job->args.args_val);
           result.task = curr_job->n_reduce_assigned;
           curr_job->n_reduce_assigned += 1;
           result.wait = false;
