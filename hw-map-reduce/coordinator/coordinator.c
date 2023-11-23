@@ -167,7 +167,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     printf("n_map, %d\n", curr_job->n_map);
     printf("n_reduce, %d\n", curr_job->n_reduce);
     if (curr_job->done == false) {
-      if (curr_job->n_map_assigned < curr_job->n_map) {
+      if (curr_job->n_map_assigned < curr_job->n_map && curr_job->n_map_completed < curr_job->n_map) {
         printf("n_map_assigned: %d\n", curr_job->n_map_assigned);
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
         result.task = curr_job->n_map_assigned;
@@ -185,7 +185,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         return &result;
       }
       //if all map tasks are completed, but not all reduce tasks are done
-      if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_assigned < curr_job->n_reduce) {
+      if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_assigned < curr_job->n_reduce && curr_job->n_reduce_completed < curr_job->n_reduce) {
         //are there any more reduce tasks to assign?
         result.job_id = curr_job->jobID;
         result.output_dir = strdup(curr_job->output_dir);
