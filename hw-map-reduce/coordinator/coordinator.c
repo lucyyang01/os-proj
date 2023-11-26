@@ -109,6 +109,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   if (stat(argp->output_dir, &st) == -1) {
     mkdirp(argp->output_dir);
   }
+  result = new_job->jobID;
 
   return &result;
   /* END */
