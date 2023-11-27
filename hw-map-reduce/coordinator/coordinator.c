@@ -109,6 +109,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   if (stat(argp->output_dir, &st) == -1) {
     mkdirp(argp->output_dir);
   }
+
   result = new_job->jobID;
 
   return &result;
@@ -136,7 +137,6 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
     //we're done 
     job* lookup = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*argp));
     if(lookup->done == true) {
-      //printf("FINISHING\n");
       result.done = true;
       state->jobs = g_list_remove(state->jobs, GINT_TO_POINTER(*argp));
     } else {
@@ -193,18 +193,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.wait = false;
         result.reduce = true;
         return &result;
-        // if( < curr_job->n_reduce) {
-        //   printf("n_reduce_assigned: %d\n", curr_job->n_reduce_assigned);
-        //   //assign the reduce task
-  
-        // } else {
-        //   continue;
-        // }
-      } else {
-        continue;
       }
-    } else {
-      continue;
     }
   }
   return &result;

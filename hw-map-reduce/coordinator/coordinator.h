@@ -47,6 +47,7 @@ typedef struct {
   
   //GList* taskIDs;
   GHashTable* mapTasks; //map taskid to file path
+  GHashTable* completionTimes; //map taskid to time elapsed 
   int n_map_completed;
   int n_map_assigned;
   int n_reduce_completed;
