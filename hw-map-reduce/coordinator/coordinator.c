@@ -66,9 +66,10 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   /* TODO */
   //validate provided application name
+  //RETURNING PREMATURELY - STILL NEED TO FILL OUT JOB STRUCT SO THE RPC CAN FIND IT
   app valid = get_app(argp->app);
   if (valid.name == NULL)
-    return (int*) -1;
+    result = -1;
 
   //create a job
   job* new_job = malloc(sizeof(job));
@@ -123,10 +124,14 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
   printf("Received poll job request\n");
 
   /* TODO */
-  //get the correct job from the ht
+  //-1 means that a bad app was passed in?
+  if (*argp == -1) {
+    result.done = false;
+    result.failed = true;
+    result.invalid_job_id = false;
+  }
   GList* lookup = g_list_find(state->jobs, GINT_TO_POINTER(*argp));
-  //TODO: check that n_map_completed == n_map && n_reduce_completed == n_reduce
-  //if invalid jobid was passed in
+
   if (lookup == NULL) {
     //printf("MADE IT HERE\n");
     result.done = false;
@@ -160,6 +165,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   result.args.args_len = 0;
 
   /* TODO */
+  //iterate through all jobs
   for(int i = 0; i < g_list_length(state->jobs); i++) {
     int* curr_job_id = (int*) g_list_nth(state->jobs, i);
     job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*curr_job_id));
@@ -175,6 +181,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       } else {
         result.args.args_val = strdup(curr_job->args_val);
       }
+      //assigning a map task
       if (curr_job->n_map_assigned < curr_job->n_map && curr_job->n_map_completed < curr_job->n_map) {
         printf("n_map_assigned: %d\n", curr_job->n_map_assigned);
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
@@ -187,7 +194,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       }
       //if all map tasks are completed, but not all reduce tasks are done
       if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_assigned < curr_job->n_reduce && curr_job->n_reduce_completed < curr_job->n_reduce) {
-        //are there any more reduce tasks to assign?
         result.task = curr_job->n_reduce_assigned;
         curr_job->n_reduce_assigned += 1;
         result.wait = false;
