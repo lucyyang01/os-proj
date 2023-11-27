@@ -31,6 +31,7 @@ typedef struct {
   GList* jobs; //queue of jobs
   GHashTable* jobInfo; //hashmap of jobs
   int counter; //global counter for unique jobids
+  GHashTable* reassignTasks; //tasks that failed, to be reassigned
 } coordinator;
 
 typedef struct {
@@ -47,7 +48,10 @@ typedef struct {
   
   //GList* taskIDs;
   GHashTable* mapTasks; //map taskid to file path
-  GHashTable* completionTimes; //map taskid to time elapsed 
+  //GHashTable* completionTimes; //does this need to be a map???
+  //store list of tasks to be reassigned either per job (extra condition to check inside for loop)
+  //can also store global list of tasks to be assigned in the state
+  GHashTable* taskInfo; //list of tasks 
   int n_map_completed;
   int n_map_assigned;
   int n_reduce_completed;
@@ -56,55 +60,17 @@ typedef struct {
   bool failed;
 } job;
 
+typedef struct {
+  long start_time;
+  bool complete;
+  bool reduce;
+  int jobID; //id of corresponding job
+  int taskID; //id of the task
+  bool timeout;
+  char* file; // will be null unless the task is a map task
+  char* output_dir;
+} task;
 
 
 void coordinator_init(coordinator** coord_ptr);
 #endif
-
-
-/* TODO */
-//   if (g_list_length(state->jobs) > 0) {
-//     int* first_id = (int*) g_list_first(state->jobs);
-//     job* first_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*first_id));
-//     //there are map tasks left to be assigned
-//     result.job_id = first_job->jobID;
-//     result.output_dir = strdup(first_job->output_dir);
-//     result.app = strdup(first_job->app);
-//     result.args.args_len = first_job->args.args_len;
-//     result.n_reduce = first_job->n_reduce;
-//     result.n_map = first_job->n_map;
-//     if (first_job->args.args_val != NULL) {
-//       result.args.args_val = strdup(first_job->args.args_val);
-//     } else {
-//       result.args.args_val = ""; //or should it be null?
-//     }
-//     //if there's still map tasks to be assigned
-//     if (first_job->n_map_assigned < first_job->n_map) {
-//       char* task_file = g_hash_table_lookup(first_job->mapTasks, GINT_TO_POINTER(first_job->n_map_assigned));
-//       result.task = first_job->n_map_assigned;
-//       result.file = strdup(task_file);
-//       result.reduce = false;
-//       result.wait = false;
-//       first_job->n_map_assigned += 1;
-//       return &result;
-//     }
-//     //if all map tasks are completed, but not all reduce tasks are done
-//     if(first_job->n_map_completed == first_job->n_map && first_job->n_reduce_completed < first_job->n_reduce) {
-//       //are there any more reduce tasks to assign?
-//       if(first_job->n_reduce_assigned < first_job->n_reduce) {
-//         //assign the reduce task
-//         result.task = first_job->n_reduce_assigned;
-//         first_job->n_reduce_assigned += 1;
-//         result.wait = false;
-//         result.reduce = true;
-//         return &result;
-//       //all reduce tasks assigned, but not all of them have completed
-//       } else {
-//         //if there's another job on the queue, get it and assign a map
-//         result.wait = true;
-//         return &result;
-//       }
-//     }
-//   }
-//   return &result;
-// }

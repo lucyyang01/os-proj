@@ -74,7 +74,8 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  new_job->completionTimes = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  new_job->taskInfo = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  //new_job->completionTimes = NULL;
   new_job->n_map_completed = 0;
   new_job->n_map_assigned = 0;
   new_job->n_reduce_assigned = 0;
@@ -167,6 +168,37 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   result.args.args_len = 0;
 
   /* TODO */
+  //first, reassign a failed job
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init(&iter, state->reassignTasks);
+  while (g_hash_table_iter_next(&iter, &key, &value)) { 
+    //reassign the first value
+    printf("I MADE IT INTO THE REASSIGNMENT LOOP\n");
+    task* curr_task = value;
+    job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(curr_task->jobID));
+    result.job_id = curr_job->jobID;
+    result.output_dir = strdup(curr_job->output_dir);
+    result.app = strdup(curr_job->app);
+    result.args.args_len = curr_job->args_len;
+    result.n_reduce = curr_job->n_reduce;
+    result.n_map = curr_job->n_map;
+    if (curr_job->args_val == NULL) {
+      result.args.args_val = NULL;
+    } else {
+      result.args.args_val = strdup(curr_job->args_val);
+    }
+    result.task = curr_task->taskID;
+    if(curr_task->file != NULL)
+      result.file = strdup(curr_task->file);
+    result.wait = false;
+    result.reduce = curr_task->reduce;
+    curr_task->timeout = false;
+    //add back to hashmap!!!!
+    g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(result.task), curr_task);
+    return &result;
+    //if a task fails when do we wait?
+  }
   //iterate through all jobs
   for(int i = 0; i < g_list_length(state->jobs); i++) {
     int* curr_job_id = (int*) g_list_nth(state->jobs, i);
@@ -187,7 +219,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       //reduce tasks can have same task id as map tasks
         //ok because reduce tasks can't be assigned until all map tasks have been completed?
       if (curr_job->n_map_assigned < curr_job->n_map && curr_job->n_map_completed < curr_job->n_map) {
-        printf("n_map_assigned: %d\n", curr_job->n_map_assigned);
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
         result.task = curr_job->n_map_assigned;
         result.file = strdup(task_file);
@@ -195,7 +226,16 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.wait = false;
         curr_job->n_map_assigned += 1;
         //add task and time started to map
-        g_hash_table_insert(curr_job->completionTimes, GINT_TO_POINTER(result.task), GINT_TO_POINTER(time(NULL)));
+        task* new_task = malloc(sizeof(task));
+        new_task->complete = false;
+        new_task->start_time = time(NULL);
+        new_task->reduce = false;
+        new_task->file = strdup(strdup(task_file));
+        new_task->jobID = curr_job->jobID;
+        new_task->taskID = result.task;
+        new_task->timeout = false;
+        //curr_job->taskInfo = g_list_append(curr_job->taskInfo, GINT_TO_POINTER(result.task));
+        g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(result.task), new_task);
         return &result;
       }
 
@@ -205,7 +245,16 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         curr_job->n_reduce_assigned += 1;
         result.wait = false;
         result.reduce = true;
-        g_hash_table_insert(curr_job->completionTimes, GINT_TO_POINTER(result.task), GINT_TO_POINTER(time(NULL)));
+        task* new_task = malloc(sizeof(task));
+        new_task->complete = false;
+        new_task->start_time = time(NULL);
+        new_task->reduce = true;
+        new_task->file = NULL;
+        new_task->jobID = curr_job->jobID;
+        new_task->taskID = result.task;
+        new_task->timeout = false;
+        //curr_job->taskInfo = g_list_append(curr_job->taskInfo, GINT_TO_POINTER(result.task));
+        g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(result.task), new_task);
         return &result;
       }
     }
@@ -229,14 +278,42 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
     curr_job->failed = true;
     return (void*)&result;
   }
-  if (argp->reduce != true) {
-    curr_job->n_map_completed += 1;
-  } else {
-    curr_job->n_reduce_completed += 1;
+
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init(&iter, curr_job->taskInfo);
+  while (g_hash_table_iter_next(&iter, &key, &value)) {
+    //if the worker died, add this task to the reassignment list
+    //remove it from hashmap if it's complete?
+    task* curr_task = value;
+    if(curr_task->complete) {
+      continue;
+    }
+    printf("EXAMINING TASKINFO\n");
+    printf("curr taskID: %d\n", curr_task->taskID);
+    printf("job associated with: %d\n", curr_task->jobID);
+    printf("curr task start time: %ld\n", curr_task->start_time);
+    if (time(NULL) - curr_task->start_time > TASK_TIMEOUT_SECS && curr_task->complete == false) {
+      curr_task->timeout = true; //check this
+      printf("SOMETHING TIMED OUT\n");
+      g_hash_table_insert(state->reassignTasks, GINT_TO_POINTER(curr_task->taskID), curr_task);
+    }
+  }
+
+  //iterate through taskinfo and put any failed tasks into reassignment list
+  task* curr_task = g_hash_table_lookup(curr_job->taskInfo, GINT_TO_POINTER(argp->task));
+  if(curr_task->timeout == false) {
+    curr_task->complete = true;
+    if (argp->reduce != true) {
+      curr_job->n_map_completed += 1;
+    } else {
+      curr_job->n_reduce_completed += 1;
+    }
   }
   if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed == curr_job->n_reduce) {
     curr_job->done = true;
   }
+  g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(curr_task->taskID), curr_task);
   return (void*)&result;
 }
 
@@ -244,8 +321,10 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
 void coordinator_init(coordinator** coord_ptr) {
   *coord_ptr = malloc(sizeof(coordinator));
   (*coord_ptr)->jobInfo = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  (*coord_ptr)->reassignTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
   (*coord_ptr)->counter = 0;
   (*coord_ptr)->jobs = NULL;
+  //(*coord_ptr)->reassignTasks = NULL;
   coordinator* coord = *coord_ptr;
   /* TODO */
 }
