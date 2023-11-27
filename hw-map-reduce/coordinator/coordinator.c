@@ -67,9 +67,6 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   /* TODO */
   //validate provided application name
   //RETURNING PREMATURELY - STILL NEED TO FILL OUT JOB STRUCT SO THE RPC CAN FIND IT
-  app valid = get_app(argp->app);
-  if (valid.name == NULL)
-    result = -1;
 
   //create a job
   job* new_job = malloc(sizeof(job));
@@ -77,6 +74,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   new_job->app = strdup(argp->app);
   new_job->n_map = argp->files.files_len;
   new_job->mapTasks = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  new_job->completionTimes = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
   new_job->n_map_completed = 0;
   new_job->n_map_assigned = 0;
   new_job->n_reduce_assigned = 0;
@@ -113,6 +111,10 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   result = new_job->jobID;
 
+  app valid = get_app(argp->app);
+  if (valid.name == NULL)
+    result = -1;
+  
   return &result;
   /* END */
 }
@@ -182,6 +184,8 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_val = strdup(curr_job->args_val);
       }
       //assigning a map task
+      //reduce tasks can have same task id as map tasks
+        //ok because reduce tasks can't be assigned until all map tasks have been completed?
       if (curr_job->n_map_assigned < curr_job->n_map && curr_job->n_map_completed < curr_job->n_map) {
         printf("n_map_assigned: %d\n", curr_job->n_map_assigned);
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
@@ -190,14 +194,18 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.reduce = false;
         result.wait = false;
         curr_job->n_map_assigned += 1;
+        //add task and time started to map
+        g_hash_table_insert(curr_job->completionTimes, GINT_TO_POINTER(result.task), GINT_TO_POINTER(time(NULL)));
         return &result;
       }
+
       //if all map tasks are completed, but not all reduce tasks are done
       if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_assigned < curr_job->n_reduce && curr_job->n_reduce_completed < curr_job->n_reduce) {
         result.task = curr_job->n_reduce_assigned;
         curr_job->n_reduce_assigned += 1;
         result.wait = false;
         result.reduce = true;
+        g_hash_table_insert(curr_job->completionTimes, GINT_TO_POINTER(result.task), GINT_TO_POINTER(time(NULL)));
         return &result;
       }
     }
