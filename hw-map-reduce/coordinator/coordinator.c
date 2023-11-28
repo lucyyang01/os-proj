@@ -169,41 +169,78 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
 
   /* TODO */
   //first, reassign a failed job
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init(&iter, state->reassignTasks);
-  while (g_hash_table_iter_next(&iter, &key, &value)) { 
-    //reassign the first value
-    printf("I MADE IT INTO THE REASSIGNMENT LOOP\n");
-    task* curr_task = value;
-    job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(curr_task->jobID));
-    result.job_id = curr_job->jobID;
-    result.output_dir = strdup(curr_job->output_dir);
-    result.app = strdup(curr_job->app);
-    result.args.args_len = curr_job->args_len;
-    result.n_reduce = curr_job->n_reduce;
-    result.n_map = curr_job->n_map;
-    if (curr_job->args_val == NULL) {
-      result.args.args_val = NULL;
-    } else {
-      result.args.args_val = strdup(curr_job->args_val);
-    }
-    result.task = curr_task->taskID;
-    if(curr_task->file != NULL)
-      result.file = strdup(curr_task->file);
-    result.wait = false;
-    result.reduce = curr_task->reduce;
-    curr_task->timeout = false;
-    //update start time
-    //add back to hashmap!!!!
-    g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(result.task), curr_task);
-    return &result;
-    //if a task fails when do we wait?
-  }
+  // GHashTableIter iter;
+  // gpointer key, value;
+  // g_hash_table_iter_init(&iter, state->reassignTasks);
+  // while (g_hash_table_iter_next(&iter, &key, &value)) { 
+  //   //reassign the first value
+  //   printf("I MADE IT INTO THE REASSIGNMENT LOOP\n");
+  //   task* curr_task = value;
+  //   job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(curr_task->jobID));
+  //   result.job_id = curr_job->jobID;
+  //   result.output_dir = strdup(curr_job->output_dir);
+  //   result.app = strdup(curr_job->app);
+  //   result.args.args_len = curr_job->args_len;
+  //   result.n_reduce = curr_job->n_reduce;
+  //   result.n_map = curr_job->n_map;
+  //   if (curr_job->args_val == NULL) {
+  //     result.args.args_val = NULL;
+  //   } else {
+  //     result.args.args_val = strdup(curr_job->args_val);
+  //   }
+  //   result.task = curr_task->taskID;
+  //   if(curr_task->file != NULL)
+  //     result.file = strdup(curr_task->file);
+  //   result.wait = false;
+  //   result.reduce = curr_task->reduce;
+  //   curr_task->timeout = false;
+  //   //update start time
+  //   //add back to hashmap!!!!
+  //   g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(result.task), curr_task);
+  //   return &result;
+  //   //if a task fails when do we wait?
+  // }
   //iterate through all jobs
   for(int i = 0; i < g_list_length(state->jobs); i++) {
     int* curr_job_id = (int*) g_list_nth(state->jobs, i);
     job* curr_job = g_hash_table_lookup(state->jobInfo, GINT_TO_POINTER(*curr_job_id));
+    GHashTableIter iter;
+    gpointer key, value;
+    g_hash_table_iter_init(&iter, curr_job->taskInfo);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+      //if the worker died, add this task to the reassignment list
+      //remove it from hashmap if it's complete?
+      task* curr_task = (task*) value;
+      if(curr_task->complete) {
+        continue; //
+      }
+      // // printf("EXAMINING TASKINFO\n");
+      // printf("curr taskID: %d\n", curr_task->taskID);
+      // // printf("job associated with: %d\n", curr_task->jobID);
+      // printf("curr task start time: %ld\n", curr_task->start_time);
+      // //printf("CURRENT TIME: %ld\n", *curr_task->start_time);
+      // printf("elapsed time: %ld\n", time(NULL) - curr_task->start_time);
+      if ((time(NULL) - curr_task->start_time) > TASK_TIMEOUT_SECS && curr_task->complete == false) {
+        curr_task->timeout = true; //check this
+        //printf("SOMETHING TIMED OUT\n");
+        result.job_id = curr_job->jobID;
+        result.output_dir = strdup(curr_job->output_dir);
+        result.app = strdup(curr_job->app);
+        result.args.args_len = curr_job->args_len;
+        result.n_reduce = curr_job->n_reduce;
+        result.n_map = curr_job->n_map;
+        result.wait = false;
+        if (curr_job->args_val == NULL) {
+          result.args.args_val = NULL;
+        } else {
+          result.args.args_val = strdup(curr_job->args_val);
+        }
+        result.task = curr_task->taskID;
+        result.file = strdup(curr_task->file);
+        result.reduce = curr_task->reduce;
+        return &result;
+      }
+    }
     if (curr_job->done == false) {
       result.job_id = curr_job->jobID;
       result.output_dir = strdup(curr_job->output_dir);
@@ -217,8 +254,6 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.args.args_val = strdup(curr_job->args_val);
       }
       //assigning a map task
-      //reduce tasks can have same task id as map tasks
-        //ok because reduce tasks can't be assigned until all map tasks have been completed?
       if (curr_job->n_map_assigned < curr_job->n_map && curr_job->n_map_completed < curr_job->n_map) {
         char* task_file = g_hash_table_lookup(curr_job->mapTasks, GINT_TO_POINTER(curr_job->n_map_assigned));
         result.task = curr_job->n_map_assigned;
@@ -286,29 +321,6 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
     return (void*)&result;
   }
 
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init(&iter, curr_job->taskInfo);
-  while (g_hash_table_iter_next(&iter, &key, &value)) {
-    //if the worker died, add this task to the reassignment list
-    //remove it from hashmap if it's complete?
-    task* curr_task = (task*) value;
-    if(curr_task->complete) {
-      continue; //
-    }
-    // printf("EXAMINING TASKINFO\n");
-    printf("curr taskID: %d\n", curr_task->taskID);
-    // printf("job associated with: %d\n", curr_task->jobID);
-    printf("curr task start time: %ld\n", curr_task->start_time);
-    //printf("CURRENT TIME: %ld\n", *curr_task->start_time);
-    printf("elapsed time: %ld\n", time(NULL) - curr_task->start_time);
-    if ((time(NULL) - curr_task->start_time) > TASK_TIMEOUT_SECS && curr_task->complete == false) {
-      curr_task->timeout = true; //check this
-      printf("SOMETHING TIMED OUT\n");
-      g_hash_table_insert(state->reassignTasks, GINT_TO_POINTER(curr_task->taskID), curr_task);
-    }
-  }
-
   //iterate through taskinfo and put any failed tasks into reassignment list
   task* curr_task = g_hash_table_lookup(curr_job->taskInfo, GINT_TO_POINTER(argp->task));
   if(curr_task->timeout == false) {
@@ -322,7 +334,7 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed == curr_job->n_reduce) {
     curr_job->done = true;
   }
-  g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(curr_task->taskID), curr_task);
+  //g_hash_table_update(curr_job->taskInfo, GINT_TO_POINTER(curr_task->taskID), curr_task);
   return (void*)&result;
 }
 
