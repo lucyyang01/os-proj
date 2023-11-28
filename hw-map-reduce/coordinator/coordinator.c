@@ -194,6 +194,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     result.wait = false;
     result.reduce = curr_task->reduce;
     curr_task->timeout = false;
+    //update start time
     //add back to hashmap!!!!
     g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(result.task), curr_task);
     return &result;
@@ -228,7 +229,9 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         //add task and time started to map
         task* new_task = malloc(sizeof(task));
         new_task->complete = false;
-        new_task->start_time = time(NULL);
+        new_task->start_time = time(&new_task->start_time);
+        printf("START TIME: %ld\n", new_task->start_time);
+        //gettimeofday(&new_task->start_time, NULL);
         new_task->reduce = false;
         new_task->file = strdup(strdup(task_file));
         new_task->jobID = curr_job->jobID;
@@ -247,7 +250,9 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
         result.reduce = true;
         task* new_task = malloc(sizeof(task));
         new_task->complete = false;
-        new_task->start_time = time(NULL);
+
+        new_task->start_time = time(&new_task->start_time);
+        //gettimeofday(&new_task->start_time, NULL);
         new_task->reduce = true;
         new_task->file = NULL;
         new_task->jobID = curr_job->jobID;
@@ -274,8 +279,10 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   if (curr_job == NULL) {
     return (void*)&result;
   }
+  //if a job fails none of its tasks should be reassigned
   if(argp->success == false) {
     curr_job->failed = true;
+    curr_job->done = true;
     return (void*)&result;
   }
 
@@ -285,15 +292,17 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   while (g_hash_table_iter_next(&iter, &key, &value)) {
     //if the worker died, add this task to the reassignment list
     //remove it from hashmap if it's complete?
-    task* curr_task = value;
+    task* curr_task = (task*) value;
     if(curr_task->complete) {
-      continue;
+      continue; //
     }
-    printf("EXAMINING TASKINFO\n");
+    // printf("EXAMINING TASKINFO\n");
     printf("curr taskID: %d\n", curr_task->taskID);
-    printf("job associated with: %d\n", curr_task->jobID);
+    // printf("job associated with: %d\n", curr_task->jobID);
     printf("curr task start time: %ld\n", curr_task->start_time);
-    if (time(NULL) - curr_task->start_time > TASK_TIMEOUT_SECS && curr_task->complete == false) {
+    //printf("CURRENT TIME: %ld\n", *curr_task->start_time);
+    printf("elapsed time: %ld\n", time(NULL) - curr_task->start_time);
+    if ((time(NULL) - curr_task->start_time) > TASK_TIMEOUT_SECS && curr_task->complete == false) {
       curr_task->timeout = true; //check this
       printf("SOMETHING TIMED OUT\n");
       g_hash_table_insert(state->reassignTasks, GINT_TO_POINTER(curr_task->taskID), curr_task);
@@ -316,6 +325,13 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   g_hash_table_insert(curr_job->taskInfo, GINT_TO_POINTER(curr_task->taskID), curr_task);
   return (void*)&result;
 }
+
+
+// suseconds_t micros_elapsed(struct timeval time) {
+//   struct timeval current_time;
+//   gettimeofday(&current_time, NULL);
+//   return (current_time.tv_sec - time.tv_sec) * 1000000 + current_time.tv_usec - time.tv_usec;
+// } 
 
 /* Initialize coordinator state. */
 void coordinator_init(coordinator** coord_ptr) {

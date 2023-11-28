@@ -61,14 +61,15 @@ typedef struct {
 } job;
 
 typedef struct {
-  long start_time;
+  time_t start_time;
+  //struct timeval start_time;
   bool complete;
   bool reduce;
   int jobID; //id of corresponding job
   int taskID; //id of the task
   bool timeout;
   char* file; // will be null unless the task is a map task
-  char* output_dir;
+  //char* output_dir;
 } task;
 
 
