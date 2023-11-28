@@ -190,11 +190,13 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       g_hash_table_iter_init(&iter, curr_job->taskInfo);
       while (g_hash_table_iter_next(&iter, &key, &value)) {
         task* curr_task = (task*) value;
+        //time_t start = time(NULL);
         if ((time(NULL) - curr_task->start_time) > TASK_TIMEOUT_SECS && curr_task->complete == false) {
           //curr_task->timeout = true; //check this
           result.wait = false;
           result.task = curr_task->taskID;
-          result.file = strdup(curr_task->file);
+          if(curr_task->reduce == false)
+            result.file = strdup(curr_task->file);
           result.reduce = curr_task->reduce;
           return &result;
         }
@@ -268,27 +270,18 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
   }
 
   task* curr_task = g_hash_table_lookup(curr_job->taskInfo, GINT_TO_POINTER(argp->task));
-  if(curr_task->timeout == false) {
-    curr_task->complete = true;
-    if (argp->reduce != true) {
-      curr_job->n_map_completed += 1;
-    } else {
-      curr_job->n_reduce_completed += 1;
-    }
+  curr_task->complete = true;
+  if (argp->reduce != true) {
+    curr_job->n_map_completed += 1;
+  } else {
+    curr_job->n_reduce_completed += 1;
   }
   if(curr_job->n_map_completed == curr_job->n_map && curr_job->n_reduce_completed == curr_job->n_reduce) {
     curr_job->done = true;
   }
-  //g_hash_table_update(curr_job->taskInfo, GINT_TO_POINTER(curr_task->taskID), curr_task);
+  g_hash_table_replace(curr_job->taskInfo, GINT_TO_POINTER(curr_task->taskID), curr_task);
   return (void*)&result;
 }
-
-
-// suseconds_t micros_elapsed(struct timeval time) {
-//   struct timeval current_time;
-//   gettimeofday(&current_time, NULL);
-//   return (current_time.tv_sec - time.tv_sec) * 1000000 + current_time.tv_usec - time.tv_usec;
-// } 
 
 /* Initialize coordinator state. */
 void coordinator_init(coordinator** coord_ptr) {
