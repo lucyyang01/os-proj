@@ -75,3 +75,9 @@ typedef struct {
 
 void coordinator_init(coordinator** coord_ptr);
 #endif
+// // printf("EXAMINING TASKINFO\n");
+      // printf("curr taskID: %d\n", curr_task->taskID);
+      // // printf("job associated with: %d\n", curr_task->jobID);
+      // printf("curr task start time: %ld\n", curr_task->start_time);
+      // //printf("CURRENT TIME: %ld\n", *curr_task->start_time);
+      // printf("elapsed time: %ld\n", time(NULL) - curr_task->start_time);
