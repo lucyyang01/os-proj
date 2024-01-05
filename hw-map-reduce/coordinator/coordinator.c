@@ -191,7 +191,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
       while (g_hash_table_iter_next(&iter, &key, &value)) {
         task* curr_task = (task*) value;
         //time_t start = time(NULL);
-        if ((time(NULL) - curr_task->start_time) > TASK_TIMEOUT_SECS && curr_task->complete == false) {
+        if ((time(NULL) - curr_task->start_time) >= TASK_TIMEOUT_SECS && curr_task->complete == false) {
           //curr_task->timeout = true; //check this
           result.wait = false;
           result.task = curr_task->taskID;
